@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Environment / secrets
+.env
+*.env
+app/data/.env
+
+# App-generated runtime files (never commit these)
+app/data/leads.db
+app/data/*.db
+app/data/.flask_secret_key
+app/data/.admin_password
+
+# Logs & scratch
+*.log
+run.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

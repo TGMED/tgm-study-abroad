@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Chat with Amara — TGM{% endblock %}
+{% block content %}
+<div class="site" style="max-width:640px;">
+  <header class="masthead">
+    <div class="wordmark">CHAT WITH <span class="flip">AMARA</span></div>
+  </header>
+
+  {% if profile and profile.destination %}
+  <p class="eyebrow">Your TGM AI counsellor</p>
+  <p class="dek">Picking up from your ROI result — {{ profile.profession or 'your profile' }} → {{ (profile.destination or '')|upper }}{% if profile.score is not none %}, score {{ profile.score }}/100{% endif %}.</p>
+  {% else %}
+  <p class="eyebrow">Your TGM AI counsellor</p>
+  <p class="dek">Ask Amara anything about studying abroad — costs, visas, timelines, and programme options.</p>
+  {% endif %}
+
+  <div class="card chat-window" id="chatWindow">
+    {% for m in messages %}
+      <div class="chat-bubble chat-{{ m.role }}">{{ m.content }}</div>
+    {% endfor %}
+  </div>
+  <p class="chat-error" id="chatError" style="display:none;"></p>
+
+  <div class="chat-composer">
+    <input id="chatInput" placeholder="Ask Amara anything…" autocomplete="off" />
+    <button id="chatSendBtn">Send</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>window.__TGM_NEEDS_OPENING__ = {{ 'true' if needs_opening else 'false' }};</script>
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% endblock %}

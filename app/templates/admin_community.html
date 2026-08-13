@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Community moderation — Global Education ROI (internal admin)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  body{ font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0; padding: 24px; background:#F5F7F1; color:#0A0F1E; }
+  h1{ font-size: 20px; margin: 0 0 4px; }
+  .count{ color:#5B6357; font-size:13px; margin:0 0 18px; }
+  .report-card{ background:#fff; border-radius:10px; box-shadow:0 4px 20px rgba(10,15,30,0.08); padding:16px 18px; margin-bottom:14px; }
+  .report-meta{ font-size:11.5px; color:#8A9184; margin-bottom:8px; }
+  .report-post{ background:#F5F7F1; border-radius:8px; padding:10px 12px; font-size:13.5px; margin-bottom:10px; white-space:pre-wrap; }
+  .report-reason{ font-size:12.5px; color:#5B6357; margin-bottom:12px; }
+  .actions{ display:flex; gap:8px; }
+  .actions button{ padding:8px 14px; border-radius:7px; border:1px solid #DEE2D6; background:#fff; font-size:12.5px; cursor:pointer; }
+  .hide-btn{ background:#C0392B; color:#fff; border-color:#C0392B; }
+  .empty{ padding:24px; text-align:center; color:#8A9184; font-size:13px; }
+</style>
+</head>
+<body>
+  <h1>Community moderation queue</h1>
+  <p class="count">{{ reports|length }} open report{{ '' if reports|length == 1 else 's' }}</p>
+
+  {% if reports %}
+  {% for r in reports %}
+  <div class="report-card">
+    <div class="report-meta">Report #{{ r.report_id }} · room: {{ r.room }} · post #{{ r.post_id }} by {{ r.author_label }} · reported {{ r.reported_at }}</div>
+    <div class="report-post">{{ r.content }}</div>
+    {% if r.reason %}<div class="report-reason">Reason: {{ r.reason }}</div>{% endif %}
+    <div class="actions">
+      <form method="post" action="{{ url_for('admin.hide_post', post_id=r.post_id) }}">
+        <button type="submit" class="hide-btn">Hide post</button>
+      </form>
+      <form method="post" action="{{ url_for('admin.dismiss_reports', post_id=r.post_id) }}">
+        <button type="submit">Dismiss report</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+  {% else %}
+  <div class="empty">No open reports.</div>
+  {% endif %}
+</body>
+</html>

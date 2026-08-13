@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% block title %}Study Abroad, Smarter — TGM{% endblock %}
+{% block body_class %}home{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}" />
+{% endblock %}
+{% block content %}
+
+<!-- ===================== HERO ===================== -->
+<header class="lp-hero">
+  <div class="lp-orbs" aria-hidden="true">
+    <span class="orb orb-a"></span>
+    <span class="orb orb-b"></span>
+    <span class="orb orb-c"></span>
+  </div>
+
+  <div class="lp-hero-grid">
+    <div class="lp-hero-copy reveal">
+      <span class="lp-pill"><span class="lp-dot"></span> Trusted by 5,000+ Nigerian students</span>
+      <h1 class="lp-title">Study abroad,<br/><span class="lp-underline">without the guesswork.</span></h1>
+      <p class="lp-lead">See what an international qualification is really worth for <em>you</em> — after rent, tax and cost of living — then get matched to real programmes and a community that's been exactly where you are.</p>
+      <div class="lp-cta-row">
+        <a class="btn btn-primary" href="{{ url_for('roi.index') }}">Calculate my ROI <span class="arw">→</span></a>
+        <a class="btn btn-ghost" href="{{ url_for('chat.chat_page') }}">Chat with Amara</a>
+      </div>
+      <div class="lp-social">
+        <div class="lp-stack" aria-hidden="true">
+          <span class="mini">👩🏽‍🎓</span><span class="mini">👨🏾‍💻</span><span class="mini">👩🏾‍🔬</span><span class="mini">🧑🏽‍🏫</span>
+        </div>
+        <div class="lp-social-text"><b>4.9/5</b> ★★★★★<br/><span>from students now studying in 5 countries</span></div>
+      </div>
+    </div>
+
+    <!-- Floating people connecting + asking questions -->
+    <div class="lp-hero-visual" aria-hidden="true">
+      <div class="globe">
+        <span class="globe-ring r1"></span>
+        <span class="globe-ring r2"></span>
+        <span class="globe-core">🌍</span>
+      </div>
+
+      <div class="person p1 float-a">
+        <span class="face">👩🏽‍🎓</span>
+        <div class="bubble">Which country is cheapest for a Master's?</div>
+      </div>
+      <div class="person p2 float-b">
+        <span class="face">👨🏾‍💻</span>
+        <div class="bubble">Do I qualify with a 2:2?</div>
+      </div>
+      <div class="person p3 float-c">
+        <span class="face">🧑🏽‍🏫</span>
+        <div class="bubble">Can I bring my family?</div>
+      </div>
+      <div class="person p4 float-a">
+        <span class="face">👩🏾‍🔬</span>
+        <div class="bubble">How hard is the study visa?</div>
+      </div>
+      <div class="person p5 float-b">
+        <span class="face">🧑🏾‍🎓</span>
+        <div class="bubble">Will it actually pay off?</div>
+      </div>
+
+      <svg class="link-lines" viewBox="0 0 460 460" preserveAspectRatio="none">
+        <path d="M110,120 Q230,230 360,120" /><path d="M90,300 Q230,230 380,320" />
+        <path d="M230,60 Q230,230 210,410" />
+      </svg>
+    </div>
+  </div>
+
+  <div class="lp-wave" aria-hidden="true"></div>
+</header>
+
+<!-- ===================== STATS ===================== -->
+<section class="lp-stats reveal">
+  <div class="stat"><div class="num" data-count="5000" data-suffix="+">0</div><div class="lbl">Students guided</div></div>
+  <div class="stat"><div class="num" data-count="12" data-suffix="">0</div><div class="lbl">Partner universities</div></div>
+  <div class="stat"><div class="num" data-count="5" data-suffix="">0</div><div class="lbl">Study destinations</div></div>
+  <div class="stat"><div class="num" data-count="60" data-suffix="s">0</div><div class="lbl">To your ROI score</div></div>
+</section>
+
+<!-- ===================== HOW IT WORKS ===================== -->
+<section class="lp-section" id="how">
+  <div class="lp-head reveal">
+    <span class="lp-eyebrow">How it works</span>
+    <h2>Clarity in three simple steps</h2>
+    <p>No spreadsheets, no agents pushing you. Just a clear, personal picture of your best move.</p>
+  </div>
+  <div class="lp-steps">
+    <article class="step-card reveal">
+      <div class="step-ico">🧮</div>
+      <span class="step-no">01</span>
+      <h3>Tell us your reality</h3>
+      <p>Your profession, your pay, your city. Thirty seconds — no sign-up needed to start.</p>
+    </article>
+    <article class="step-card reveal" style="--d:.08s">
+      <div class="step-ico">📈</div>
+      <span class="step-no">02</span>
+      <h3>See your true ROI</h3>
+      <p>A live, honest breakdown across five destinations — net of rent, tax and cost of living.</p>
+    </article>
+    <article class="step-card reveal" style="--d:.16s">
+      <div class="step-ico">🤝</div>
+      <span class="step-no">03</span>
+      <h3>Get matched & supported</h3>
+      <p>Real programmes at partner universities, plus Amara and a student community in your corner.</p>
+    </article>
+  </div>
+</section>
+
+<!-- ===================== DESTINATIONS ===================== -->
+<section class="lp-section alt" id="destinations">
+  <div class="lp-head reveal">
+    <span class="lp-eyebrow">Where you could go</span>
+    <h2>Five destinations, one honest comparison</h2>
+    <p>Each with its own pay, visa route and cost of living — weighed for your exact profile.</p>
+  </div>
+  <div class="lp-dest-grid">
+    <div class="dest-card reveal"><span class="flag">GB</span><h4>United Kingdom</h4><p>2-year graduate visa · strong salary uplift</p></div>
+    <div class="dest-card reveal" style="--d:.05s"><span class="flag">CA</span><h4>Canada</h4><p>PGWP route · clear path to residency</p></div>
+    <div class="dest-card reveal" style="--d:.1s"><span class="flag">IE</span><h4>Ireland</h4><p>EU tech hub · English-taught programmes</p></div>
+    <div class="dest-card reveal" style="--d:.15s"><span class="flag">PL</span><h4>Poland</h4><p>Low cost of living · fast-growing economy</p></div>
+    <div class="dest-card reveal" style="--d:.2s"><span class="flag">EU</span><h4>Europe</h4><p>Affordable tuition · Schengen access</p></div>
+  </div>
+</section>
+
+<!-- ===================== COMMUNITY / AMARA ===================== -->
+<section class="lp-section" id="community">
+  <div class="lp-feature">
+    <div class="lp-feature-copy reveal">
+      <span class="lp-eyebrow">You're not doing this alone</span>
+      <h2>Meet Amara &amp; a community that gets it</h2>
+      <p>Ask anything — visas, funding, homesickness, which city fits you — and get straight answers from an AI counsellor trained on real journeys, backed by students already living the dream.</p>
+      <ul class="lp-checks">
+        <li>Instant, judgement-free answers, 24/7</li>
+        <li>Live rooms with students in your destination</li>
+        <li>Guidance from qualification to touchdown</li>
+      </ul>
+      <a class="btn btn-primary" href="{{ url_for('chat.chat_page') }}">Start chatting <span class="arw">→</span></a>
+    </div>
+    <div class="lp-feature-visual reveal">
+      <div class="chat-mock">
+        <div class="chat-top"><span class="av">🧕🏽</span><div><b>Amara</b><span class="on">● online</span></div></div>
+        <div class="msg them">Hi! I have a 2:2 in Accounting — can I still study in the UK? 😊</div>
+        <div class="msg me">Absolutely. Several partner unis accept a 2:2 with relevant experience. Want me to show 3 that fit your budget?</div>
+        <div class="msg them">Yes please!</div>
+        <div class="typing"><span></span><span></span><span></span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== TESTIMONIALS ===================== -->
+<section class="lp-section alt" id="stories">
+  <div class="lp-head reveal">
+    <span class="lp-eyebrow">Real students, real moves</span>
+    <h2>From "maybe someday" to boarding pass</h2>
+  </div>
+  <div class="lp-quotes">
+    <figure class="quote-card reveal">
+      <blockquote>"I thought abroad was out of reach. The ROI score showed me Poland made total sense — I start my Master's in January."</blockquote>
+      <figcaption><span class="qav">👩🏾‍🎓</span><span><b>Chidinma A.</b><small>Warsaw, Poland</small></span></figcaption>
+    </figure>
+    <figure class="quote-card reveal" style="--d:.08s">
+      <blockquote>"Amara answered questions I was too shy to ask an agent. Two months later I had my Canadian study permit."</blockquote>
+      <figcaption><span class="qav">👨🏾‍💻</span><span><b>Tobi E.</b><small>Toronto, Canada</small></span></figcaption>
+    </figure>
+    <figure class="quote-card reveal" style="--d:.16s">
+      <blockquote>"The honest cost-of-living breakdown saved me from a mistake. I picked Ireland and I've never looked back."</blockquote>
+      <figcaption><span class="qav">👩🏽‍🔬</span><span><b>Aisha M.</b><small>Dublin, Ireland</small></span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ===================== FINAL CTA ===================== -->
+<section class="lp-final reveal">
+  <div class="lp-final-inner">
+    <h2>Your future is 60 seconds away.</h2>
+    <p>Find out what studying abroad is really worth for you — free, instant, no pressure.</p>
+    <a class="btn btn-light" href="{{ url_for('roi.index') }}">Get my ROI score <span class="arw">→</span></a>
+  </div>
+</section>
+
+<footer class="lp-footer">
+  <div class="lp-foot-brand">TGM</div>
+  <p>Global education. Smart investment.</p>
+  <p class="fine">© TGM · A study-abroad investment-planning tool, not financial or immigration advice.</p>
+</footer>
+
+{% endblock %}
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/landing.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,93 @@
+/* ============================================================
+   Global white + light-green theme for every non-home page
+   (calculator, chat, community, login, join). Re-skins the
+   original amber/ink design by remapping its CSS variables and
+   overriding the few hard-coded colours. Scoped to
+   body:not(.home) so the landing page keeps landing.css.
+   ============================================================ */
+body:not(.home){
+  --g-500:#22B573; --g-600:#149A5E; --g-700:#0E7A4A;
+  /* remap the design tokens the whole app already reads */
+  --surface:#ffffff;
+  --surface-raised:#ffffff;
+  --surface-sunken:#F1FBF5;
+  --text-primary:#0E2A1E;
+  --text-secondary:#4B5B52;
+  --text-muted:#7C8A80;
+  --line:rgba(14,42,30,.10);
+  --line-strong:rgba(14,42,30,.20);
+  --accent:#22B573;
+  --accent-ink:#ffffff;
+  --stamp:#149A5E;
+  --shadow:0 22px 55px -30px rgba(14,90,57,.45);
+  --chart-surface:#F6FBF7;
+  --series-nigeria:#9AA6A0;   /* "without study" — neutral */
+  --series-dest:#149A5E;      /* "with a Master's" — green  */
+
+  background:
+    radial-gradient(120% 80% at 100% -10%, #DFF6E8, transparent 55%),
+    linear-gradient(180deg, #F6FBF7 0%, #ffffff 60%) !important;
+  color:var(--text-primary);
+}
+
+/* ---- Masthead wordmark tag (was dark navy + amber) ---- */
+body:not(.home) .wordmark .flip{
+  background:linear-gradient(135deg,var(--g-500),var(--g-600));
+  color:#fff; font-family:'Plex Body',sans-serif; letter-spacing:.02em;
+}
+
+/* ---- Primary buttons: elegant sans, green, no shouty caps ---- */
+body:not(.home) .calc-btn,
+body:not(.home) .modal-submit,
+body:not(.home) .chat-composer button,
+body:not(.home) .composer-card button{
+  background:linear-gradient(135deg,var(--g-500),var(--g-600));
+  color:#fff;
+  font-family:'Plex Body', system-ui, sans-serif;
+  text-transform:none; letter-spacing:normal; font-weight:600;
+  border-radius:12px;
+  box-shadow:0 14px 30px -16px rgba(14,90,57,.6);
+  transition:transform .16s ease, box-shadow .2s ease;
+}
+body:not(.home) .calc-btn{font-size:15.5px; padding:15px;}
+body:not(.home) .calc-btn:not(:disabled):hover,
+body:not(.home) .modal-submit:hover,
+body:not(.home) .chat-composer button:hover,
+body:not(.home) .composer-card button:hover{
+  transform:translateY(-2px); box-shadow:0 20px 38px -16px rgba(14,90,57,.7);
+}
+
+/* ---- Cards get a softer, rounder look ---- */
+body:not(.home) .card,
+body:not(.home) .boardingpass,
+body:not(.home) .post-card,
+body:not(.home) .composer-card{ border-radius:18px; }
+
+/* ---- The soft-pivot banner: green instead of navy ---- */
+body:not(.home) .pivot{
+  background:linear-gradient(155deg, var(--g-700), var(--g-600) 60%, var(--g-500));
+  color:#F0FBF5; border:none;
+}
+body:not(.home) .pivot::before{ background:#fff; color:var(--g-700); }
+body:not(.home) .pivot .eyebrow{ color:#DFF6E8; }
+body:not(.home) .pivot p{ color:#E3F5EA; }
+body:not(.home) .pivot .pivot-btn{
+  background:#fff; color:var(--g-700);
+  transition:transform .16s ease; font-family:'Plex Body',sans-serif;
+}
+body:not(.home) .pivot .pivot-btn:hover{ transform:translateY(-2px); }
+
+/* ---- Room tabs: friendlier font ---- */
+body:not(.home) .room-tab{ font-family:'Plex Body',sans-serif; font-size:12.5px; border-radius:999px; padding:8px 15px; }
+
+/* ---- Chat + community bubbles polish (colours come from vars) ---- */
+body:not(.home) .chat-bubble.chat-user{ box-shadow:0 8px 20px -12px rgba(14,90,57,.5); }
+body:not(.home) .post-author-ai::after{ content:" · AI"; font-size:9px; color:var(--g-600); font-weight:700; letter-spacing:.04em; }
+
+/* ---- Nav CTA reused on inner pages ---- */
+body:not(.home) .tgm-nav-cta,
+body:not(.home) .tgm-nav-logout{
+  background:var(--g-500); color:#fff !important; padding:8px 15px; border-radius:999px;
+}
+body:not(.home) .tgm-nav-links a{ color:var(--text-secondary); }
+body:not(.home) .tgm-nav-links a.active{ color:var(--g-700); border-bottom-color:var(--g-500); }

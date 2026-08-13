@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Leads — Global Education ROI (local admin)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  body{ font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0; padding: 24px; background:#F5F7F1; color:#0A0F1E; }
+  h1{ font-size: 20px; margin: 0 0 4px; }
+  .warn{ background:#FFF3CD; border:1px solid #E7C36B; color:#5B4A11; padding:10px 14px; border-radius:8px; font-size:13px; margin:14px 0 20px; max-width:70ch; }
+  .count{ color:#5B6357; font-size:13px; margin:0 0 18px; }
+  table{ width:100%; border-collapse:collapse; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 4px 20px rgba(10,15,30,0.08); }
+  th, td{ text-align:left; padding:9px 12px; font-size:12.5px; border-bottom:1px solid #EDEFE7; white-space:nowrap; }
+  th{ background:#0A0F1E; color:#FFD48A; font-weight:600; text-transform:uppercase; font-size:10.5px; letter-spacing:0.04em; }
+  tr:last-child td{ border-bottom:none; }
+  .empty{ padding:24px; text-align:center; color:#8A9184; font-size:13px; }
+  .fwd-yes{ color:#1F9D57; font-weight:600; }
+  .fwd-no{ color:#8A9184; }
+</style>
+</head>
+<body>
+  <h1>Captured leads</h1>
+  <p class="count">{{ rows|length }} lead{{ '' if rows|length == 1 else 's' }} captured{{ ' · Google Form forwarding on' if google_form_configured else '' }}{{ ' · HubSpot forwarding on' if hubspot_configured else '' }} · <a href="{{ url_for('admin.admin_community') }}">Community moderation →</a></p>
+
+  <p class="warn">
+    <b>Password-protected (HTTP Basic Auth)</b>, but still meant for local/internal use only.
+    If you deploy this publicly, put it behind HTTPS — Basic Auth sends credentials in a
+    form that's only safe over an encrypted connection.
+  </p>
+
+  {% if rows %}
+  <table>
+    <thead>
+      <tr>
+        <th>#</th><th>Captured (UTC)</th><th>Email</th><th>Qualification</th><th>Grade</th>
+        <th>Profession</th><th>Destination</th><th>City</th><th>Salary (₦/mo)</th>
+        <th>Score</th><th>Ratio</th><th>Source</th><th>Google Form</th><th>HubSpot</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td>{{ row['id'] }}</td>
+        <td>{{ row['created_at'] }}</td>
+        <td>{{ row['email'] }}</td>
+        <td>{{ row['qualification'] }}</td>
+        <td>{{ row['grade'] if row['grade'] else '—' }}</td>
+        <td>{{ row['profession'] }}</td>
+        <td>{{ row['destination'] }}</td>
+        <td>{{ row['city'] }}</td>
+        <td>{{ '{:,.0f}'.format(row['salary']) if row['salary'] else '—' }}</td>
+        <td>{{ row['score'] if row['score'] is not none else '—' }}</td>
+        <td>{{ row['ratio'] if row['ratio'] is not none else '—' }}</td>
+        <td>{{ row['source'] }}</td>
+        <td class="{{ 'fwd-yes' if row['forwarded_to_google_form'] else 'fwd-no' }}">
+          {{ 'Sent' if row['forwarded_to_google_form'] else '—' }}
+        </td>
+        <td class="{{ 'fwd-yes' if row['forwarded_to_hubspot'] else 'fwd-no' }}">
+          {{ 'Sent' if row['forwarded_to_hubspot'] else '—' }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">No leads captured yet. Submit the "See matching programmes" form on the main page to test.</div>
+  {% endif %}
+</body>
+</html>

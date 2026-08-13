@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Join the community — TGM{% endblock %}
+{% block content %}
+<div class="site" style="max-width:440px;">
+  <header class="masthead">
+    <div class="wordmark">STUDENT <span class="flip">COMMUNITY</span></div>
+  </header>
+
+  <p class="eyebrow">One quick step</p>
+  <h1 class="hero" style="font-size:30px;">What should we call you?</h1>
+  <p class="dek">Pick a name to join the conversation. You'll be chatting with other students — and Amara, our AI counsellor — in seconds. No email needed.</p>
+
+  <div class="card counter">
+    {% if error %}<p class="modal-error show" style="margin:-4px 0 14px;">{{ error }}</p>{% endif %}
+    <form method="POST" action="{{ url_for('auth.join') }}">
+      <input type="hidden" name="next" value="{{ next_url }}" />
+      <div class="field">
+        <label for="name">Your name or nickname</label>
+        <input type="text" id="name" name="name" maxlength="40" placeholder="e.g. Ada, or Ada_Lagos" autocomplete="off" autofocus required />
+      </div>
+      <button class="calc-btn" type="submit">Join the community →</button>
+    </form>
+    <p class="fx-badge" style="margin-top:14px;">Be kind. Posts are visible to everyone in the room.</p>
+  </div>
+</div>
+{% endblock %}

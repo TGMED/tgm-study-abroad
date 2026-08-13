@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Community — {{ room|upper }} — TGM{% endblock %}
+{% block content %}
+<div class="site" style="max-width:640px;">
+  <header class="masthead">
+    <div class="wordmark">STUDENT <span class="flip">COMMUNITY</span></div>
+  </header>
+
+  <div class="room-tabs">
+    {% for r in rooms %}
+    <a href="{{ url_for('community.community_room', room=r) }}" class="room-tab {{ 'active' if r == room else '' }}">{{ r|upper if r != 'general' else 'General' }}</a>
+    {% endfor %}
+  </div>
+
+  <p class="dek" style="margin-top:14px;">Talk with other students heading to {{ room|upper if room != 'general' else 'anywhere' }}. Mention <b>@amara</b> in a post to bring the AI counsellor into the thread.</p>
+
+  <div id="threadList" data-room="{{ room }}" data-last-id="{{ last_id }}">
+    {% for item in thread %}
+    <div class="post-card" data-post-id="{{ item.post.id }}">
+      <div class="post-head">
+        <span class="post-author {{ 'post-author-ai' if item.post.is_ai else '' }}">{{ item.post.author_label }}</span>
+        <span class="post-time">{{ item.post.created_at }}</span>
+        {% if not item.post.is_ai %}<button class="post-report" data-post-id="{{ item.post.id }}">Report</button>{% endif %}
+      </div>
+      <div class="post-content">{{ item.post.content }}</div>
+      <div class="post-replies">
+        {% for reply in item.replies %}
+        <div class="post-card post-reply" data-post-id="{{ reply.id }}">
+          <div class="post-head">
+            <span class="post-author {{ 'post-author-ai' if reply.is_ai else '' }}">{{ reply.author_label }}</span>
+            <span class="post-time">{{ reply.created_at }}</span>
+            {% if not reply.is_ai %}<button class="post-report" data-post-id="{{ reply.id }}">Report</button>{% endif %}
+          </div>
+          <div class="post-content">{{ reply.content }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      <button class="post-reply-btn" data-post-id="{{ item.post.id }}">Reply</button>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="composer-card">
+    <input type="hidden" id="replyToId" value="" />
+    <p class="reply-context" id="replyContext" style="display:none;"></p>
+    <textarea id="postInput" placeholder="Share something with the group, or @amara a question…" rows="2"></textarea>
+    <button id="postSendBtn">Post</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/community.js') }}"></script>
+{% endblock %}

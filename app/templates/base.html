@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>{% block title %}Global Education ROI — TGM{% endblock %}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preload" as="font" type="font/woff2" href="{{ url_for('static', filename='fonts/fraunces-display-900.woff2') }}" crossorigin>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}" />
+{% block extra_head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+
+<nav class="tgm-nav">
+  <div class="tgm-nav-links">
+    <a href="{{ url_for('roi.home') }}" {% if request.endpoint == 'roi.home' %}class="active"{% endif %}>Home</a>
+    <a href="{{ url_for('roi.index') }}" {% if request.endpoint == 'roi.index' %}class="active"{% endif %}>ROI Calculator</a>
+    {% if session.get('student_id') %}
+    <a href="{{ url_for('chat.chat_page') }}" {% if request.endpoint == 'chat.chat_page' %}class="active"{% endif %}>Chat with Amara</a>
+    <a href="{{ url_for('community.community_room', room='general') }}" {% if request.endpoint == 'community.community_room' %}class="active"{% endif %}>Community</a>
+    <a href="{{ url_for('auth.logout') }}" class="tgm-nav-logout">Log out</a>
+    {% else %}
+    <a href="{{ url_for('community.community_room', room='general') }}" {% if request.blueprint == 'community' %}class="active"{% endif %}>Community</a>
+    <a href="{{ url_for('roi.index') }}" class="tgm-nav-cta">Get my score →</a>
+    {% endif %}
+  </div>
+</nav>
+
+{% block content %}{% endblock %}
+
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

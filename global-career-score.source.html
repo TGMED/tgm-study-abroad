@@ -1,0 +1,1096 @@
+<title>Global Career Score — TGM</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  @font-face{
+    font-family:'Fraunces Display';
+    font-style:normal; font-weight:900; font-display:swap;
+    src:url(data:font/woff2;base64,__FRAUNCES900__) format('woff2');
+  }
+  @font-face{
+    font-family:'Plex Body';
+    font-style:normal; font-weight:400; font-display:swap;
+    src:url(data:font/woff2;base64,__PLEXSANS400__) format('woff2');
+  }
+  @font-face{
+    font-family:'Plex Body';
+    font-style:normal; font-weight:600; font-display:swap;
+    src:url(data:font/woff2;base64,__PLEXSANS600__) format('woff2');
+  }
+  @font-face{
+    font-family:'Plex Data';
+    font-style:normal; font-weight:500; font-display:swap;
+    src:url(data:font/woff2;base64,__PLEXMONO500__) format('woff2');
+  }
+  @font-face{
+    font-family:'Plex Data';
+    font-style:normal; font-weight:600; font-display:swap;
+    src:url(data:font/woff2;base64,__PLEXMONO600__) format('woff2');
+  }
+
+  :root{
+    --ink-950:#0A0F1E;
+    --ink-800:#131A2E;
+    --ink-700:#1C2540;
+    --ink-600:#2A3352;
+    --amber-500:#F2A93B;
+    --amber-600:#D98A22;
+    --amber-300:#FFD48A;
+    --naira-500:#1F9D57;
+    --naira-400:#33C57A;
+    --paper-0:#F5F7F1;
+    --paper-50:#EDEFE7;
+    --paper-100:#DEE2D6;
+    --paper-200:#C9CFBE;
+
+    --surface:var(--paper-0);
+    --surface-raised:#ffffff;
+    --surface-sunken:var(--paper-100);
+    --text-primary:var(--ink-950);
+    --text-secondary:#5B6357;
+    --text-muted:#8A9184;
+    --line:rgba(10,15,30,0.14);
+    --line-strong:rgba(10,15,30,0.28);
+    --accent:var(--amber-600);
+    --accent-ink:#3D2600;
+    --stamp:var(--naira-500);
+    --shadow:0 20px 50px -25px rgba(10,15,30,0.35);
+
+    --chart-surface:var(--paper-0);
+    --series-nigeria:#008300;
+    --series-dest:#c9581e;
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root{
+      --surface:var(--ink-950);
+      --surface-raised:var(--ink-800);
+      --surface-sunken:var(--ink-700);
+      --text-primary:#EDEFE7;
+      --text-secondary:#AEB6A4;
+      --text-muted:#727C6F;
+      --line:rgba(237,239,231,0.14);
+      --line-strong:rgba(237,239,231,0.28);
+      --accent:var(--amber-500);
+      --accent-ink:#241400;
+      --stamp:var(--naira-400);
+      --shadow:0 20px 60px -20px rgba(0,0,0,0.6);
+
+      --chart-surface:var(--ink-800);
+      --series-nigeria:#33C57A;
+      --series-dest:#F2A93B;
+    }
+  }
+  :root[data-theme="dark"]{
+    --surface:var(--ink-950);
+    --surface-raised:var(--ink-800);
+    --surface-sunken:var(--ink-700);
+    --text-primary:#EDEFE7;
+    --text-secondary:#AEB6A4;
+    --text-muted:#727C6F;
+    --line:rgba(237,239,231,0.14);
+    --line-strong:rgba(237,239,231,0.28);
+    --accent:var(--amber-500);
+    --accent-ink:#241400;
+    --stamp:var(--naira-400);
+    --shadow:0 20px 60px -20px rgba(0,0,0,0.6);
+    --chart-surface:var(--ink-800);
+    --series-nigeria:#33C57A;
+    --series-dest:#F2A93B;
+  }
+  :root[data-theme="light"]{
+    --surface:var(--paper-0);
+    --surface-raised:#ffffff;
+    --surface-sunken:var(--paper-100);
+    --text-primary:var(--ink-950);
+    --text-secondary:#5B6357;
+    --text-muted:#8A9184;
+    --line:rgba(10,15,30,0.14);
+    --line-strong:rgba(10,15,30,0.28);
+    --accent:var(--amber-600);
+    --accent-ink:#3D2600;
+    --stamp:var(--naira-500);
+    --shadow:0 20px 50px -25px rgba(10,15,30,0.35);
+    --chart-surface:var(--paper-0);
+    --series-nigeria:#008300;
+    --series-dest:#c9581e;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--surface);
+    color:var(--text-primary);
+    font-family:'Plex Body', system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.5;
+  }
+  a{color:inherit;}
+  button{font-family:inherit;}
+  ::selection{background:var(--accent); color:var(--accent-ink);}
+
+  .num{font-family:'Plex Data', ui-monospace, "IBM Plex Mono", monospace; font-variant-numeric:tabular-nums;}
+
+  .site{max-width:640px; margin:0 auto; padding:0 18px 80px;}
+
+  /* ---------- Masthead ---------- */
+  .masthead{
+    padding:28px 0 22px;
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    border-bottom:1px solid var(--line);
+    margin-bottom:28px;
+  }
+  .wordmark{
+    font-family:'Fraunces Display', Georgia, serif;
+    font-weight:900;
+    font-size:26px;
+    letter-spacing:-0.01em;
+    display:flex; align-items:baseline; gap:8px;
+  }
+  .wordmark .flip{
+    display:inline-block;
+    background:var(--ink-950);
+    color:var(--amber-300);
+    border-radius:3px;
+    padding:1px 6px;
+    font-family:'Plex Data', monospace;
+    font-size:15px;
+    font-weight:600;
+    letter-spacing:0.04em;
+  }
+  .byline{
+    font-size:11px; letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--text-muted); text-align:right; line-height:1.4;
+  }
+  .byline b{color:var(--text-secondary); font-weight:600;}
+
+  .eyebrow{
+    font-family:'Plex Data', monospace;
+    font-size:11px; letter-spacing:0.16em; text-transform:uppercase;
+    color:var(--text-muted);
+    display:flex; align-items:center; gap:8px;
+    margin:0 0 10px;
+  }
+  .eyebrow::before{content:""; width:16px; height:1px; background:var(--line-strong);}
+
+  h1.hero{
+    font-family:'Fraunces Display', Georgia, serif;
+    font-weight:900;
+    font-size:clamp(30px, 7vw, 42px);
+    line-height:1.04;
+    letter-spacing:-0.015em;
+    margin:0 0 10px;
+    text-wrap:balance;
+  }
+  p.dek{
+    font-size:15px; color:var(--text-secondary); max-width:46ch; margin:0 0 30px;
+  }
+
+  /* ---------- Ticket counter card ---------- */
+  .card{
+    background:var(--surface-raised);
+    border:1px solid var(--line);
+    border-radius:16px;
+    box-shadow:var(--shadow);
+  }
+  .counter{padding:22px 22px 24px; margin-bottom:22px;}
+  .gate-label{
+    font-family:'Plex Data', monospace; font-size:11px; letter-spacing:0.14em;
+    text-transform:uppercase; color:var(--accent); font-weight:600;
+    margin:0 0 14px; display:flex; align-items:center; gap:8px;
+  }
+  .gate-label .n{
+    background:var(--accent); color:var(--accent-ink); border-radius:50%;
+    width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center;
+    font-size:10.5px; font-weight:700;
+  }
+  .field{margin-bottom:16px;}
+  .field label{
+    display:block; font-size:11.5px; letter-spacing:0.06em; text-transform:uppercase;
+    color:var(--text-muted); margin-bottom:6px; font-weight:600;
+  }
+  .field input, .field select{
+    width:100%; padding:12px 14px; border-radius:10px;
+    border:1px solid var(--line-strong); background:var(--surface-sunken);
+    color:var(--text-primary); font-size:15.5px; font-family:'Plex Body', sans-serif;
+  }
+  .field input::placeholder{color:var(--text-muted);}
+  .field input:focus, .field select:focus, .destchip:focus-visible, button:focus-visible{
+    outline:2px solid var(--accent); outline-offset:2px;
+  }
+  .naira-input{position:relative;}
+  .naira-input .prefix{
+    position:absolute; left:14px; top:50%; transform:translateY(-50%);
+    color:var(--text-muted); font-family:'Plex Data', monospace; font-size:15px; pointer-events:none;
+  }
+  .naira-input input{padding-left:32px;}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+
+  .destinations{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:6px;}
+  .destchip{
+    text-align:left; cursor:pointer; border:1px solid var(--line-strong);
+    background:var(--surface-sunken); border-radius:12px; padding:12px 12px;
+    display:flex; flex-direction:column; gap:2px; color:var(--text-primary);
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .destchip:hover{border-color:var(--accent);}
+  .destchip.active{
+    border-color:var(--accent); background:color-mix(in oklab, var(--accent) 16%, var(--surface-sunken));
+  }
+  .destchip .flag{font-size:20px;}
+  .destchip .name{font-weight:600; font-size:14.5px;}
+  .destchip .curr{font-size:11.5px; color:var(--text-muted); font-family:'Plex Data', monospace;}
+
+  .calc-btn{
+    width:100%; margin-top:14px; padding:15px; border:none; border-radius:11px;
+    background:var(--ink-950); color:var(--amber-300);
+    font-family:'Plex Data', monospace; font-weight:600; font-size:14px;
+    letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;
+    transition:transform .12s ease;
+  }
+  :root[data-theme="dark"] .calc-btn{ background:var(--amber-500); color:var(--ink-950); }
+  @media (prefers-color-scheme: dark){ .calc-btn{ background:var(--amber-500); color:var(--ink-950); } }
+  :root[data-theme="light"] .calc-btn{ background:var(--ink-950); color:var(--amber-300); }
+  .calc-btn:active{transform:scale(0.99);}
+  .calc-btn:disabled{opacity:0.45; cursor:not-allowed;}
+  .fx-badge{
+    margin-top:10px; text-align:center; font-family:'Plex Data', monospace;
+    font-size:10.5px; letter-spacing:0.04em; color:var(--text-muted);
+    display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .fx-badge .dot{width:6px; height:6px; border-radius:50%; background:var(--text-muted);}
+  .fx-badge.live .dot{background:var(--stamp);}
+  .fx-badge.live{color:var(--text-secondary);}
+
+  /* ---------- Results ---------- */
+  #results{display:none;}
+  #results.show{display:block;}
+
+  /* ---------- Boarding pass ---------- */
+  .boardingpass{
+    position:relative;
+    display:grid; grid-template-columns:1fr 128px;
+    background:var(--surface-raised);
+    border:1px solid var(--line);
+    border-radius:18px;
+    box-shadow:var(--shadow);
+    margin-bottom:22px;
+    overflow:hidden;
+  }
+  .bp-main{padding:22px 20px 20px; position:relative;}
+  .bp-stub{
+    padding:20px 14px;
+    background:var(--surface-sunken);
+    border-left:2px dashed var(--line-strong);
+    display:flex; flex-direction:column; align-items:center; justify-content:space-between; gap:12px;
+    text-align:center;
+  }
+  .bp-route{
+    display:flex; align-items:center; gap:8px; font-family:'Plex Data', monospace;
+    font-size:12px; color:var(--text-muted); letter-spacing:0.06em; margin-bottom:16px;
+  }
+  .bp-route .city{color:var(--text-secondary); font-weight:600;}
+  .bp-route .plane{color:var(--accent);}
+  .bp-verdict{
+    font-family:'Fraunces Display', Georgia, serif; font-weight:900;
+    font-size:clamp(22px,6vw,30px); line-height:1.05; margin:0 0 6px; text-wrap:balance;
+  }
+  .bp-verdict .emoji{font-size:0.85em;}
+  .bp-sub{font-size:13.5px; color:var(--text-secondary); margin:0 0 18px; max-width:38ch;}
+  .bp-figures{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:6px;}
+  .bp-figure .k{font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); margin-bottom:3px;}
+  .bp-figure .v{font-family:'Plex Data', monospace; font-weight:600; font-size:16.5px;}
+  .bp-multiplier{
+    margin-top:14px; padding-top:14px; border-top:1px solid var(--line);
+    display:flex; align-items:baseline; gap:8px;
+  }
+  .bp-multiplier .x{font-family:'Plex Data', monospace; font-weight:600; font-size:34px; color:var(--stamp);}
+  .bp-multiplier .label{font-size:12.5px; color:var(--text-secondary); max-width:28ch;}
+
+  .bp-barcode{
+    height:30px; margin-top:auto;
+    background:repeating-linear-gradient(90deg, var(--text-primary) 0 2px, transparent 2px 5px);
+    opacity:0.55; width:100%; border-radius:2px;
+  }
+  .visa-meter{width:100%;}
+  .visa-meter .vk{font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); margin-bottom:6px;}
+  .visa-bars{display:flex; gap:3px; margin-bottom:6px;}
+  .visa-bars i{flex:1; height:7px; border-radius:2px; background:var(--line-strong); display:block;}
+  .visa-bars i.on{background:var(--accent);}
+  .visa-note{font-size:10.5px; color:var(--text-secondary); line-height:1.3;}
+
+  .family-toggle{width:100%; padding-top:12px; border-top:1px solid var(--line);}
+  .family-toggle button{
+    width:100%; padding:8px; border-radius:8px; border:1px solid var(--line-strong);
+    background:transparent; color:var(--text-secondary); font-size:11.5px; cursor:pointer;
+  }
+  .family-toggle button.on{background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600;}
+
+  .bp-actions{display:flex; gap:8px; padding:0 20px 20px;}
+  .bp-actions button{
+    flex:1; padding:11px 10px; border-radius:9px; border:1px solid var(--line-strong);
+    background:var(--surface-sunken); color:var(--text-primary); font-size:12.5px; font-weight:600;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .bp-actions button:hover{border-color:var(--accent);}
+
+  .family-panel{
+    display:none; padding:0 20px 18px; gap:12px; grid-template-columns:1fr auto; align-items:center;
+  }
+  .family-panel.show{display:grid;}
+  .family-panel .stepper{display:flex; align-items:center; gap:10px; background:var(--surface-sunken); border-radius:9px; padding:6px 10px;}
+  .family-panel .stepper button{border:none; background:var(--surface-raised); width:26px; height:26px; border-radius:6px; cursor:pointer; font-size:15px; color:var(--text-primary);}
+  .family-panel .stepper span{min-width:16px; text-align:center; font-family:'Plex Data', monospace;}
+  .family-panel label{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-secondary);}
+
+  /* ---------- Trajectory chart ---------- */
+  .chartcard{padding:20px 20px 18px; margin-bottom:22px;}
+  .chartcard h3{
+    font-family:'Fraunces Display', Georgia, serif; font-weight:900; font-size:18px; margin:0 0 3px;
+  }
+  .chartcard .sub{font-size:12.5px; color:var(--text-secondary); margin:0 0 16px;}
+  .legend{display:flex; gap:16px; margin-bottom:10px;}
+  .legend .item{display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-secondary);}
+  .legend .sw{width:10px; height:10px; border-radius:3px;}
+  .chart-wrap{position:relative; background:var(--chart-surface); border-radius:10px;}
+  .chart-tooltip{
+    position:absolute; pointer-events:none; background:var(--ink-950); color:#EDEFE7;
+    border-radius:8px; padding:8px 10px; font-size:11.5px; box-shadow:0 10px 30px rgba(0,0,0,0.3);
+    transform:translate(-50%,-110%); opacity:0; transition:opacity .1s ease; white-space:nowrap; z-index:5;
+  }
+  .chart-tooltip.show{opacity:1;}
+  .chart-tooltip .row{display:flex; align-items:center; gap:6px; margin-top:2px;}
+  .chart-tooltip .sw{width:8px; height:8px; border-radius:2px;}
+  .table-toggle{
+    margin-top:10px; background:none; border:none; color:var(--text-muted); font-size:11.5px;
+    text-decoration:underline; cursor:pointer; padding:0;
+  }
+  .datatable{display:none; width:100%; border-collapse:collapse; margin-top:12px; font-size:12px;}
+  .datatable.show{display:table;}
+  .datatable th, .datatable td{text-align:right; padding:6px 8px; border-bottom:1px solid var(--line);}
+  .datatable th:first-child, .datatable td:first-child{text-align:left;}
+  .datatable th{color:var(--text-muted); font-weight:600; font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em;}
+
+  /* ---------- Soft pivot banner ---------- */
+  .pivot{
+    border-radius:18px; padding:24px 22px; margin-bottom:18px;
+    background:linear-gradient(155deg, var(--ink-950), #1C2A4A 65%, var(--ink-950));
+    color:#EDEFE7; position:relative; overflow:hidden;
+    border:1px solid var(--line);
+  }
+  .pivot::before{
+    content:"ADMISSIONS OPEN"; position:absolute; top:14px; right:-32px;
+    font-family:'Plex Data', monospace; font-size:10px; letter-spacing:0.18em;
+    background:var(--amber-500); color:var(--ink-950); padding:3px 40px; transform:rotate(6deg);
+    font-weight:700;
+  }
+  .pivot .eyebrow{color:var(--amber-300);}
+  .pivot .eyebrow::before{background:rgba(237,239,231,0.3);}
+  .pivot h3{
+    font-family:'Fraunces Display', Georgia, serif; font-weight:900; font-size:22px;
+    line-height:1.15; margin:0 0 8px; max-width:22ch; text-wrap:balance;
+  }
+  .pivot p{font-size:13.5px; color:#C7CDBE; max-width:42ch; margin:0 0 18px;}
+  .pivot .pivot-btn{
+    background:var(--amber-500); color:var(--ink-950); border:none; padding:13px 18px;
+    border-radius:10px; font-weight:700; font-size:13.5px; cursor:pointer;
+  }
+
+  footer{padding:22px 4px 0; font-size:11.5px; color:var(--text-muted); line-height:1.6; border-top:1px solid var(--line); margin-top:6px;}
+  footer p{margin:0 0 8px;}
+
+  /* ---------- Modal ---------- */
+  .modal-backdrop{
+    position:fixed; inset:0; background:rgba(6,9,18,0.6); display:none;
+    align-items:center; justify-content:center; padding:20px; z-index:50;
+  }
+  .modal-backdrop.show{display:flex;}
+  .modal{
+    background:var(--surface-raised); border-radius:16px; padding:26px 24px; max-width:400px; width:100%;
+    box-shadow:var(--shadow); position:relative;
+  }
+  .modal-close{position:absolute; top:14px; right:14px; background:none; border:none; font-size:18px; color:var(--text-muted); cursor:pointer;}
+  .modal h4{font-family:'Fraunces Display', Georgia, serif; font-size:19px; margin:0 0 6px; font-weight:900;}
+  .modal p{font-size:13px; color:var(--text-secondary); margin:0 0 18px;}
+  .modal .field input, .modal .field select{font-size:14.5px;}
+  .modal-submit{
+    width:100%; padding:13px; border:none; border-radius:9px; background:var(--ink-950); color:var(--amber-300);
+    font-weight:700; font-size:13.5px; cursor:pointer; margin-top:4px;
+  }
+  :root[data-theme="dark"] .modal-submit{background:var(--amber-500); color:var(--ink-950);}
+  @media (prefers-color-scheme: dark){ .modal-submit{background:var(--amber-500); color:var(--ink-950);} }
+  .modal-success{display:none; text-align:center; padding:10px 0;}
+  .modal-success.show{display:block;}
+  .modal-success .big{font-size:34px; margin-bottom:8px;}
+  .modal-form.hide{display:none;}
+
+  @media (max-width:420px){
+    .boardingpass{grid-template-columns:1fr; }
+    .bp-stub{border-left:none; border-top:2px dashed var(--line-strong); flex-direction:row; flex-wrap:wrap;}
+    .destinations{grid-template-columns:1fr;}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none !important; animation:none !important;}
+  }
+</style>
+
+<div class="site">
+
+  <header class="masthead">
+    <div class="wordmark">GLOBAL CAREER <span class="flip">SCORE</span></div>
+    <div class="byline">A study-abroad ROI tool by<br/><b>TGM</b></div>
+  </header>
+
+  <p class="eyebrow">60-second study-abroad reality check</p>
+  <h1 class="hero">Your career here. Your career with a global degree.</h1>
+  <p class="dek">Tell us your job, your pay, your city — we'll show what an international qualification could actually be worth, after rent, tax and cost of living, in five real study destinations.</p>
+
+  <div class="card counter">
+    <p class="gate-label"><span class="n">1</span>Your details</p>
+
+    <div class="field">
+      <label for="profession">Profession</label>
+      <input list="professions" id="profession" placeholder="Start typing… e.g. Software Engineer" autocomplete="off" />
+      <datalist id="professions"></datalist>
+    </div>
+
+    <div class="row2">
+      <div class="field naira-input">
+        <label for="salary">Monthly salary</label>
+        <span class="prefix">₦</span>
+        <input id="salary" inputmode="numeric" placeholder="600,000" />
+      </div>
+      <div class="field">
+        <label for="city">City</label>
+        <select id="city">
+          <option value="lagos">Lagos</option>
+          <option value="abuja">Abuja</option>
+          <option value="portharcourt">Port Harcourt</option>
+        </select>
+      </div>
+    </div>
+
+    <p class="gate-label" style="margin-top:18px;"><span class="n">2</span>Study destination</p>
+    <div class="destinations" id="destinations"></div>
+
+    <button class="calc-btn" id="calcBtn" disabled>Get my Global Career Score →</button>
+    <p class="fx-badge" id="fxBadge"><span class="dot"></span><span id="fxBadgeText">Checking live exchange rates…</span></p>
+  </div>
+
+  <section id="results">
+
+    <div class="boardingpass" id="boardingpass">
+      <div class="bp-main">
+        <div class="bp-route">
+          <span class="city" id="bpFrom">LOS</span>
+          <span class="plane">✈</span>
+          <span class="city" id="bpTo">LON</span>
+          <span id="bpProfession"></span>
+        </div>
+        <div class="k" style="margin-bottom:4px;">Global Career Score</div>
+        <h2 class="bp-verdict" id="bpVerdict">—</h2>
+        <p class="bp-sub" id="bpSub">—</p>
+        <div class="bp-figures">
+          <div class="bp-figure">
+            <div class="k">Net pay, Lagos</div>
+            <div class="v num" id="bpNaira">—</div>
+          </div>
+          <div class="bp-figure">
+            <div class="k">Net pay, after your Master's</div>
+            <div class="v num" id="bpForeign">—</div>
+          </div>
+        </div>
+        <div class="bp-multiplier">
+          <span class="x num" id="bpMultiplier">—</span>
+          <span class="label">career earning uplift after rent, tax &amp; cost of living</span>
+        </div>
+
+        <div class="family-panel" id="familyPanel">
+          <label><input type="checkbox" id="famSpouse"/> Include spouse/partner</label>
+          <div class="stepper">
+            <button type="button" id="famMinus">–</button>
+            <span id="famCount">0</span>
+            <button type="button" id="famPlus">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="bp-stub">
+        <div class="visa-meter">
+          <div class="vk">Study visa difficulty</div>
+          <div class="visa-bars" id="visaBars"></div>
+          <div class="visa-note" id="visaNote">—</div>
+        </div>
+        <div class="family-toggle">
+          <button type="button" id="familyToggleBtn">+ Bringing dependents?</button>
+        </div>
+        <div class="bp-barcode"></div>
+      </div>
+    </div>
+
+    <div class="bp-actions">
+      <button id="downloadBtn">⬇ Save report</button>
+      <button id="shareBtn">🔗 Share result</button>
+    </div>
+
+    <div class="card chartcard">
+      <h3>Your 5-year trajectory</h3>
+      <p class="sub" id="chartSub">Year-one pay rarely tells the real story — the growth curve after your qualification does.</p>
+      <div class="legend">
+        <span class="item"><span class="sw" style="background:var(--series-nigeria)"></span><span id="legendNigeria">Without further study</span></span>
+        <span class="item"><span class="sw" style="background:var(--series-dest)"></span><span id="legendDest">With a Master's abroad</span></span>
+      </div>
+      <div class="chart-wrap" id="chartWrap">
+        <svg id="chartSvg" width="100%" viewBox="0 0 560 220" preserveAspectRatio="none" style="display:block; overflow:visible;"></svg>
+        <div class="chart-tooltip" id="chartTooltip"></div>
+      </div>
+      <button class="table-toggle" id="tableToggle">View as table</button>
+      <table class="datatable" id="dataTable">
+        <thead><tr><th>Year</th><th id="thNigeria">Without study (₦/mo)</th><th id="thDest">With Master's (₦-equiv/mo)</th></tr></thead>
+        <tbody id="dataTableBody"></tbody>
+      </table>
+    </div>
+
+    <div class="pivot">
+      <p class="eyebrow">The fastest way to this score</p>
+      <h3 id="pivotHeadline">Ready to unlock this abroad?</h3>
+      <p id="pivotBody">A Master's at one of TGM's 12 partner universities can get you there — a real admission pathway, not just a plan.</p>
+      <button class="pivot-btn" id="pivotBtn">See matching programmes →</button>
+    </div>
+
+    <div class="card" style="padding:16px 18px; margin-bottom:22px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
+      <div>
+        <div style="font-weight:600; font-size:13.5px;">Compare with a friend</div>
+        <div style="font-size:12px; color:var(--text-secondary);">Send them this exact comparison, prefilled.</div>
+      </div>
+      <button id="copyLinkBtn" style="white-space:nowrap; padding:10px 14px; border-radius:9px; border:1px solid var(--line-strong); background:var(--surface-sunken); color:var(--text-primary); font-size:12.5px; font-weight:600; cursor:pointer;">Copy link</button>
+    </div>
+
+  </section>
+
+  <footer>
+    <p><b>Prototype note:</b> exchange rates are live where the badge above says so (refetched on every load, no key required). Salary, tax and rent figures are still illustrative benchmarks for demonstrating the product logic. A production build sources salary bands from Payscale/Glassdoor, cost-of-living and rent from Numbeo, and tax from maintained per-country brackets — Numbeo's API requires a paid key and server-side calls (it can't be reached securely from a client-only page like this one).</p>
+    <p>© TGM · Global Career Score is a study-abroad planning tool for TGM's counselling pipeline, not financial or immigration advice. Destination pay figures assume completion of an international qualification via a study route, not direct work migration.</p>
+  </footer>
+
+</div>
+
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <button class="modal-close" id="modalClose">✕</button>
+    <div class="modal-form" id="modalForm">
+      <h4>See your matching programmes</h4>
+      <p>We'll match your background against 12 partner universities for this destination and send options to your inbox.</p>
+      <div class="field">
+        <label for="leadEmail">Email</label>
+        <input type="email" id="leadEmail" placeholder="you@email.com" />
+      </div>
+      <div class="field">
+        <label for="leadQual">Highest qualification</label>
+        <select id="leadQual">
+          <option value="bsc">Bachelor's degree</option>
+          <option value="hnd">HND</option>
+          <option value="msc">Master's degree</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <button class="modal-submit" id="leadSubmit">Send me my options</button>
+    </div>
+    <div class="modal-success" id="modalSuccess">
+      <div class="big">📬</div>
+      <h4>You're on the list</h4>
+      <p>A TGM counsellor will follow up with programmes matched to your profile and destination.</p>
+    </div>
+  </div>
+</div>
+
+<canvas id="reportCanvas" width="1080" height="1350" style="display:none;"></canvas>
+
+<script>
+(function(){
+
+  var DATA = {
+    cities: {
+      lagos:        { label:"Lagos",         code:"LOS", rentFactor:1.00 },
+      abuja:        { label:"Abuja",         code:"ABV", rentFactor:1.05 },
+      portharcourt: { label:"Port Harcourt", code:"PHC", rentFactor:0.75 }
+    },
+    nigeriaRentBase: 250000,
+    nigeriaTaxRate: 0.12,
+    nigeriaGrowth: 0.05,
+    ukRate: 2000,
+
+    professions: [
+      { id:"swe",     label:"Software Engineer",        ukGBP:4200 },
+      { id:"nurse",   label:"Registered Nurse",         ukGBP:2600 },
+      { id:"acct",    label:"Accountant",               ukGBP:3100 },
+      { id:"teacher", label:"Secondary School Teacher", ukGBP:2900 },
+      { id:"civeng",  label:"Civil Engineer",           ukGBP:3300 },
+      { id:"analyst", label:"Data Analyst",             ukGBP:3400 },
+      { id:"doctor",  label:"Medical Doctor",           ukGBP:5200 },
+      { id:"mktg",    label:"Marketing Manager",        ukGBP:3600 },
+      { id:"design",  label:"Graphic Designer",         ukGBP:2500 },
+      { id:"mecheng", label:"Mechanical Engineer",      ukGBP:3300 },
+      { id:"pharm",   label:"Pharmacist",               ukGBP:3300 },
+      { id:"lawyer",  label:"Lawyer",                   ukGBP:4000 }
+    ],
+
+    destinations: [
+      { id:"uk", label:"United Kingdom", flag:"🇬🇧", currency:"GBP", symbol:"£", suffix:false,
+        rate:2000, factor:1.00, taxRate:0.28, rent:1400, growth:0.035, visa:3,
+        visaNote:"Student Route — well-trodden for Nigerians via licensed university sponsors; Graduate Route gives 2 years post-study work.",
+        studyMonths:"12–15 months" },
+      { id:"canada", label:"Canada", flag:"🇨🇦", currency:"CAD", symbol:"CA$", suffix:false,
+        rate:1050, factor:0.95, taxRate:0.25, rent:1800, growth:0.04, visa:4,
+        visaNote:"Study Permit — proof-of-funds scrutiny and 2024 intake caps have raised refusal rates for Nigerian applicants.",
+        studyMonths:"16–24 months" },
+      { id:"germany", label:"Germany", flag:"🇩🇪", currency:"EUR", symbol:"€", suffix:false,
+        rate:1650, factor:1.05, taxRate:0.30, rent:950, growth:0.03, visa:3,
+        visaNote:"National student visa — blocked account (~€11,900/yr) and B1/B2 German are the main hurdles, process is predictable.",
+        studyMonths:"18–24 months" },
+      { id:"poland", label:"Poland", flag:"🇵🇱", currency:"PLN", symbol:"zł", suffix:true,
+        rate:380, factor:0.55, taxRate:0.20, rent:2600, growth:0.06, visa:2,
+        visaNote:"EU national student visa — lower financial threshold, decent approval rates, Schengen access.",
+        studyMonths:"12 months" },
+      { id:"ireland", label:"Ireland", flag:"🇮🇪", currency:"EUR", symbol:"€", suffix:false,
+        rate:1650, factor:1.10, taxRate:0.28, rent:1600, growth:0.035, visa:3,
+        visaNote:"Non-EEA student visa — tuition paid upfront plus proof of funds; Stamp 1G gives up to 2 years post-study work.",
+        studyMonths:"12–16 months" }
+    ]
+  };
+
+  var state = { profession:null, salary:null, city:"lagos", destination:null, spouse:false, children:0, familyOpen:false, calculated:false };
+
+  var $ = function(id){ return document.getElementById(id); };
+  function fmt(n){ return Math.round(n).toLocaleString('en-US'); }
+  function money(n, symbol, suffix){ return suffix ? (fmt(n) + " " + symbol) : (symbol + fmt(n)); }
+
+  // ---------- live FX rates ----------
+  // Free, keyless endpoint (exchangerate-api.com's open mirror). Updates daily.
+  // Falls back to the illustrative rates already set on DATA if the fetch fails
+  // or is blocked (e.g. inside a sandboxed preview with no outbound network access).
+  var FX_ENDPOINT = 'https://open.er-api.com/v6/latest/USD';
+  var fx = { live:false, asOf:null };
+
+  function applyLiveRates(json){
+    var r = json.rates;
+    if(!r || !r.NGN) return false;
+    function ngnPer(code){ return r[code] ? (r.NGN / r[code]) : null; }
+    var gbp = ngnPer('GBP');
+    if(gbp) DATA.ukRate = gbp;
+    DATA.destinations.forEach(function(d){
+      var rate = ngnPer(d.currency);
+      if(rate) d.rate = rate;
+    });
+    fx.live = true;
+    fx.asOf = json.time_last_update_utc;
+    return true;
+  }
+
+  function refreshFxBadge(){
+    var badge = $('fxBadge'), text = $('fxBadgeText');
+    badge.classList.toggle('live', fx.live);
+    text.textContent = fx.live
+      ? ('Live exchange rates · updated ' + fx.asOf)
+      : 'Illustrative exchange rates (live feed unavailable here)';
+  }
+
+  fetch(FX_ENDPOINT).then(function(res){ return res.json(); }).then(function(json){
+    if(json && json.result === 'success' && applyLiveRates(json)){
+      refreshFxBadge();
+      if(state.calculated) runCalculation();
+    } else {
+      refreshFxBadge();
+    }
+  }).catch(function(){ refreshFxBadge(); });
+
+  // ---------- populate professions ----------
+  var professionList = $('professions');
+  DATA.professions.forEach(function(p){
+    var opt = document.createElement('option');
+    opt.value = p.label;
+    professionList.appendChild(opt);
+  });
+
+  // ---------- destination chips ----------
+  var destWrap = $('destinations');
+  DATA.destinations.forEach(function(d){
+    var el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'destchip';
+    el.dataset.id = d.id;
+    el.innerHTML = '<span class="flag">'+d.flag+'</span><span class="name">'+d.label+'</span><span class="curr">'+d.currency+'</span>';
+    el.addEventListener('click', function(){
+      state.destination = d.id;
+      Array.prototype.forEach.call(destWrap.children, function(c){ c.classList.remove('active'); });
+      el.classList.add('active');
+      updateCalcButton();
+      if(state.calculated) runCalculation();
+    });
+    destWrap.appendChild(el);
+  });
+
+  function findProfession(label){
+    label = (label||'').trim().toLowerCase();
+    for(var i=0;i<DATA.professions.length;i++){ if(DATA.professions[i].label.toLowerCase()===label) return DATA.professions[i]; }
+    return null;
+  }
+  function findDestination(id){
+    for(var i=0;i<DATA.destinations.length;i++){ if(DATA.destinations[i].id===id) return DATA.destinations[i]; }
+    return null;
+  }
+
+  function updateCalcButton(){
+    var salaryVal = parseFloat(($('salary').value||'').replace(/,/g,''));
+    var prof = findProfession($('profession').value);
+    var ok = prof && salaryVal > 0 && state.destination;
+    $('calcBtn').disabled = !ok;
+  }
+
+  $('profession').addEventListener('input', updateCalcButton);
+  $('salary').addEventListener('input', function(){
+    var v = this.value.replace(/[^0-9]/g,'');
+    this.value = v ? Number(v).toLocaleString('en-US') : '';
+    updateCalcButton();
+    if(state.calculated) runCalculation();
+  });
+  $('city').addEventListener('change', function(){ state.city = this.value; if(state.calculated) runCalculation(); });
+
+  // ---------- family mode ----------
+  $('familyToggleBtn').addEventListener('click', function(){
+    state.familyOpen = !state.familyOpen;
+    $('familyPanel').classList.toggle('show', state.familyOpen);
+    this.classList.toggle('on', state.familyOpen);
+  });
+  $('famSpouse').addEventListener('change', function(){ state.spouse = this.checked; if(state.calculated) runCalculation(); });
+  $('famMinus').addEventListener('click', function(){ state.children = Math.max(0, state.children-1); $('famCount').textContent = state.children; if(state.calculated) runCalculation(); });
+  $('famPlus').addEventListener('click', function(){ state.children = Math.min(6, state.children+1); $('famCount').textContent = state.children; if(state.calculated) runCalculation(); });
+
+  // ---------- calculation engine ----------
+  function computeForYear(profession, city, dest, spouse, children, year){
+    var cityData = DATA.cities[city];
+    var householdMult = 1 + (spouse?0.4:0) + children*0.25;
+
+    var salaryInputNaira = parseFloat(($('salary').value||'0').replace(/,/g,''));
+    var nairaGross = salaryInputNaira * Math.pow(1+DATA.nigeriaGrowth, year);
+    var nairaRent = DATA.nigeriaRentBase * cityData.rentFactor * householdMult;
+    var nairaChildCost = children * (DATA.nigeriaRentBase * cityData.rentFactor) * 0.15;
+    var nairaTax = nairaGross * DATA.nigeriaTaxRate;
+    var nairaNet = nairaGross - nairaTax - nairaRent - nairaChildCost;
+
+    var ukBaselineNGN = profession.ukGBP * DATA.ukRate;
+    var foreignLocalGross = (ukBaselineNGN * dest.factor / dest.rate) * Math.pow(1+dest.growth, year);
+    var foreignRent = dest.rent * householdMult;
+    var foreignChildCost = children * dest.rent * 0.3;
+    var foreignTax = foreignLocalGross * dest.taxRate;
+    var foreignNetLocal = foreignLocalGross - foreignTax - foreignRent - foreignChildCost;
+    var foreignNetNGN = foreignNetLocal * dest.rate;
+
+    return { nairaNet:nairaNet, foreignNetLocal:foreignNetLocal, foreignNetNGN:foreignNetNGN, nairaGross:nairaGross, foreignLocalGross:foreignLocalGross };
+  }
+
+  // Piecewise-linear map from the pay ratio onto a 0-100 "Global Career Score",
+  // anchored so the verdict-tier boundaries land on round score values.
+  function scoreFromRatio(ratio){
+    var points = [ [0,5], [0.9,34], [1.4,55], [2.5,80], [4.0,97] ];
+    if(ratio <= points[0][0]) return points[0][1];
+    for(var i=0;i<points.length-1;i++){
+      var a = points[i], b = points[i+1];
+      if(ratio <= b[0]){
+        var t = (ratio - a[0]) / (b[0] - a[0]);
+        return Math.round(a[1] + t * (b[1] - a[1]));
+      }
+    }
+    return points[points.length-1][1];
+  }
+
+  function verdictFor(ratio){
+    if(ratio >= 2.5) return { text:"Strong case to study abroad", sub:"The earning upside clears rent, tax and cost of living by a wide margin — this is the profile the trajectory chart below is worth studying." };
+    if(ratio >= 1.4) return { text:"Promising — worth exploring", sub:"A real uplift once qualified abroad. The visa route and 5-year growth curve are the deciding factors." };
+    if(ratio >= 0.9) return { text:"Mixed — weigh the full picture", sub:"Year-one numbers are close. The 5-year trajectory below is the tie-breaker." };
+    return { text:"Nigeria holds its own for now", sub:"After rent and tax, this role doesn't clearly gain from a move yet — the growth curve may still change that." };
+  }
+
+  function runCalculation(){
+    var prof = findProfession($('profession').value);
+    var dest = findDestination(state.destination);
+    if(!prof || !dest) return;
+    state.profession = prof; state.calculated = true;
+
+    var y0 = computeForYear(prof, state.city, dest, state.spouse, state.children, 0);
+    var ratio = y0.foreignNetNGN / y0.nairaNet;
+    var score = scoreFromRatio(ratio);
+    var v = verdictFor(ratio);
+
+    $('bpFrom').textContent = DATA.cities[state.city].code;
+    $('bpTo').textContent = dest.id === 'uk' ? 'LON' : dest.id==='canada' ? 'YYZ' : dest.id==='germany' ? 'BER' : dest.id==='poland' ? 'WAW' : 'DUB';
+    $('bpProfession').textContent = ' · ' + prof.label;
+    $('bpVerdict').innerHTML = score + '<span style="font-size:0.4em; color:var(--text-muted);">/100</span>';
+    $('bpSub').textContent = v.text + ' — ' + v.sub;
+    $('bpNaira').textContent = money(y0.nairaNet, '₦', false) + '/mo';
+    $('bpForeign').textContent = money(y0.foreignNetLocal, dest.symbol, dest.suffix) + '/mo';
+    $('bpMultiplier').textContent = ratio.toFixed(1) + 'x';
+
+    var bars = '';
+    for(var i=1;i<=5;i++){ bars += '<i class="'+(i<=dest.visa?'on':'')+'"></i>'; }
+    $('visaBars').innerHTML = bars;
+    var visaWords = ['Very easy','Easy','Moderate','Hard','Very hard'];
+    $('visaNote').textContent = visaWords[dest.visa-1] + ' (' + dest.visa + '/5) — ' + dest.visaNote;
+
+    $('legendNigeria').textContent = 'Without further study (' + DATA.cities[state.city].label + ')';
+    $('legendDest').textContent = 'With a Master\'s in ' + dest.label;
+    $('thNigeria').textContent = 'Without study (₦/mo)';
+    $('thDest').textContent = 'With Master\'s (₦-equiv/mo)';
+
+    $('pivotHeadline').textContent = 'Ready to unlock this score as a ' + prof.label + '?';
+    $('pivotBody').textContent = 'A Master\'s at one of TGM\'s 12 partner universities in ' + dest.label + ' can get you there in ' + dest.studyMonths + ' — a real admission pathway, not just a plan.';
+
+    var years = [0,1,2,3,4,5];
+    var nigeriaSeries = years.map(function(y){ return computeForYear(prof, state.city, dest, state.spouse, state.children, y).nairaNet; });
+    var destSeries = years.map(function(y){ return computeForYear(prof, state.city, dest, state.spouse, state.children, y).foreignNetNGN; });
+    renderChart(years, nigeriaSeries, destSeries, 'Without further study', 'With a Master\'s abroad');
+    renderTable(years, nigeriaSeries, destSeries);
+
+    $('results').classList.add('show');
+    lastCalc = { prof:prof, dest:dest, ratio:ratio, score:score, v:v, y0:y0 };
+  }
+
+  var lastCalc = null;
+
+  $('calcBtn').addEventListener('click', function(){
+    runCalculation();
+    $('results').scrollIntoView({ behavior:'smooth', block:'start' });
+  });
+
+  // ---------- chart ----------
+  function renderChart(years, s1, s2, label1, label2){
+    var svg = $('chartSvg');
+    var W = 560, H = 220, padL = 44, padR = 16, padT = 16, padB = 28;
+    var maxV = Math.max.apply(null, s1.concat(s2)) * 1.08;
+    var minV = 0;
+    function x(i){ return padL + (W-padL-padR) * (i/(years.length-1)); }
+    function y(v){ return padT + (H-padT-padB) * (1 - (v-minV)/(maxV-minV)); }
+
+    var gridlines = '';
+    var ticks = 4;
+    for(var g=0; g<=ticks; g++){
+      var gv = maxV * g/ticks;
+      var gy = y(gv);
+      gridlines += '<line x1="'+padL+'" y1="'+gy+'" x2="'+(W-padR)+'" y2="'+gy+'" stroke="var(--line)" stroke-width="1"/>';
+      gridlines += '<text x="'+(padL-8)+'" y="'+(gy+3)+'" font-size="9" text-anchor="end" fill="var(--text-muted)" font-family="Plex Data, monospace">'+ (gv>=1000000? (gv/1000000).toFixed(1)+'M' : Math.round(gv/1000)+'k') +'</text>';
+    }
+    var xlabels = '';
+    years.forEach(function(yr,i){
+      xlabels += '<text x="'+x(i)+'" y="'+(H-8)+'" font-size="9.5" text-anchor="middle" fill="var(--text-muted)" font-family=\'Plex Data, monospace\'>'+(yr===0?'Now':'Yr '+yr)+'</text>';
+    });
+
+    function path(series){
+      return series.map(function(v,i){ return (i===0?'M':'L') + x(i).toFixed(1) + ',' + y(v).toFixed(1); }).join(' ');
+    }
+    function dots(series, color){
+      return series.map(function(v,i){ return '<circle class="pt" data-i="'+i+'" cx="'+x(i).toFixed(1)+'" cy="'+y(v).toFixed(1)+'" r="4" fill="'+color+'" stroke="var(--surface-raised)" stroke-width="1.5"/>'; }).join('');
+    }
+
+    var last1 = s1[s1.length-1], last2 = s2[s2.length-1];
+    var endLabels =
+      '<text x="'+(x(years.length-1)+6)+'" y="'+(y(last1)+3)+'" font-size="10" fill="var(--series-nigeria)" font-family=\'Plex Data, monospace\' font-weight="600">'+(last1>=1000000?(last1/1000000).toFixed(1)+'M':Math.round(last1/1000)+'k')+'</text>' +
+      '<text x="'+(x(years.length-1)+6)+'" y="'+(y(last2)+3)+'" font-size="10" fill="var(--series-dest)" font-family=\'Plex Data, monospace\' font-weight="600">'+(last2>=1000000?(last2/1000000).toFixed(1)+'M':Math.round(last2/1000)+'k')+'</text>';
+
+    svg.innerHTML =
+      gridlines + xlabels +
+      '<path d="'+path(s1)+'" fill="none" stroke="var(--series-nigeria)" stroke-width="2" stroke-linecap="round"/>' +
+      '<path d="'+path(s2)+'" fill="none" stroke="var(--series-dest)" stroke-width="2" stroke-linecap="round"/>' +
+      dots(s1, 'var(--series-nigeria)') + dots(s2, 'var(--series-dest)') +
+      endLabels +
+      '<line id="crosshair" x1="0" y1="'+padT+'" x2="0" y2="'+(H-padB)+'" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="3,3" opacity="0"/>';
+
+    var tooltip = $('chartTooltip');
+    var wrap = $('chartWrap');
+    svg.addEventListener('mousemove', function(evt){
+      var rect = svg.getBoundingClientRect();
+      var relX = (evt.clientX - rect.left) / rect.width * W;
+      var idx = Math.round((relX - padL) / ((W-padL-padR)/(years.length-1)));
+      idx = Math.max(0, Math.min(years.length-1, idx));
+      var cross = $('crosshair');
+      cross.setAttribute('x1', x(idx)); cross.setAttribute('x2', x(idx)); cross.setAttribute('opacity','1');
+      var wrapRect = wrap.getBoundingClientRect();
+      var px = (x(idx)/W) * wrapRect.width;
+      tooltip.style.left = px + 'px';
+      tooltip.style.top = ((y(Math.max(s1[idx],s2[idx]))/H) * wrapRect.height) + 'px';
+      tooltip.innerHTML =
+        '<div style="font-weight:600; margin-bottom:2px;">'+(years[idx]===0?'Now':'Year '+years[idx])+'</div>' +
+        '<div class="row"><span class="sw" style="background:var(--series-nigeria)"></span>'+label1+': ₦'+fmt(s1[idx])+'</div>' +
+        '<div class="row"><span class="sw" style="background:var(--series-dest)"></span>'+label2+': ₦'+fmt(s2[idx])+'</div>';
+      tooltip.classList.add('show');
+    });
+    svg.addEventListener('mouseleave', function(){
+      tooltip.classList.remove('show');
+      var cross = $('crosshair'); if(cross) cross.setAttribute('opacity','0');
+    });
+  }
+
+  function renderTable(years, s1, s2){
+    var body = $('dataTableBody');
+    body.innerHTML = years.map(function(yr,i){
+      return '<tr><td>'+(yr===0?'Now':'Year '+yr)+'</td><td class="num">₦'+fmt(s1[i])+'</td><td class="num">₦'+fmt(s2[i])+'</td></tr>';
+    }).join('');
+  }
+  $('tableToggle').addEventListener('click', function(){
+    var t = $('dataTable');
+    var showing = t.classList.toggle('show');
+    this.textContent = showing ? 'Hide table' : 'View as table';
+  });
+
+  // ---------- share link ----------
+  $('shareBtn').addEventListener('click', function(){ buildShareLink(true); });
+  $('copyLinkBtn').addEventListener('click', function(){ buildShareLink(true); });
+  function buildShareLink(copy){
+    if(!lastCalc) return;
+    var params = new URLSearchParams();
+    params.set('profession', lastCalc.prof.label);
+    params.set('salary', ($('salary').value||'').replace(/,/g,''));
+    params.set('city', state.city);
+    params.set('dest', lastCalc.dest.id);
+    var url = location.origin + location.pathname + '?' + params.toString();
+    if(copy && navigator.clipboard){
+      navigator.clipboard.writeText(url).then(function(){
+        var btn = $('shareBtn');
+        var original = btn.innerHTML;
+        btn.innerHTML = '✓ Link copied';
+        setTimeout(function(){ btn.innerHTML = original; }, 1800);
+      }).catch(function(){ prompt('Copy this link:', url); });
+    }
+    return url;
+  }
+
+  function prefillFromQuery(){
+    var params = new URLSearchParams(location.search);
+    if(!params.has('profession')) return;
+    $('profession').value = params.get('profession') || '';
+    var salary = params.get('salary');
+    if(salary){ $('salary').value = Number(salary).toLocaleString('en-US'); }
+    var city = params.get('city'); if(city){ $('city').value = city; state.city = city; }
+    var dest = params.get('dest');
+    if(dest){
+      state.destination = dest;
+      Array.prototype.forEach.call(destWrap.children, function(c){ c.classList.toggle('active', c.dataset.id===dest); });
+    }
+    updateCalcButton();
+    if(!$('calcBtn').disabled){ runCalculation(); }
+  }
+  prefillFromQuery();
+
+  // ---------- modal ----------
+  function openModal(){ $('modalBackdrop').classList.add('show'); }
+  function closeModal(){
+    $('modalBackdrop').classList.remove('show');
+    $('modalForm').classList.remove('hide');
+    $('modalSuccess').classList.remove('show');
+  }
+  $('pivotBtn').addEventListener('click', openModal);
+  $('modalClose').addEventListener('click', closeModal);
+  $('modalBackdrop').addEventListener('click', function(e){ if(e.target===this) closeModal(); });
+  $('leadSubmit').addEventListener('click', function(){
+    var email = $('leadEmail').value.trim();
+    if(!email || email.indexOf('@')===-1){ $('leadEmail').style.borderColor = '#c0392b'; return; }
+    // Prototype stub: in production this posts { email, qualification, profession, destination, source:"Global Career Score" } to HubSpot via a backend endpoint.
+    $('modalForm').classList.add('hide');
+    $('modalSuccess').classList.add('show');
+  });
+
+  // ---------- PNG report download ----------
+  $('downloadBtn').addEventListener('click', function(){
+    if(!lastCalc) return;
+    document.fonts.ready.then(drawReportCanvas).then(function(){
+      var canvas = $('reportCanvas');
+      var link = document.createElement('a');
+      link.download = 'global-career-score-report.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    });
+  });
+
+  function drawReportCanvas(){
+    var c = $('reportCanvas');
+    var ctx = c.getContext('2d');
+    var W = c.width, H = c.height;
+    var dark = matchMedia('(prefers-color-scheme: dark)').matches;
+    var rootTheme = document.documentElement.getAttribute('data-theme');
+    if(rootTheme) dark = rootTheme==='dark';
+
+    var bg = dark ? '#0A0F1E' : '#F5F7F1';
+    var card = dark ? '#131A2E' : '#ffffff';
+    var ink = dark ? '#EDEFE7' : '#0A0F1E';
+    var muted = dark ? '#AEB6A4' : '#5B6357';
+    var accent = dark ? '#F2A93B' : '#D98A22';
+    var stamp = dark ? '#33C57A' : '#1F9D57';
+
+    ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle = card; roundRect(ctx, 48,48,W-96,H-96,28); ctx.fill();
+
+    ctx.fillStyle = accent;
+    ctx.font = '600 26px "Plex Data"';
+    ctx.fillText('GLOBAL CAREER', 90, 140);
+    ctx.fillStyle = ink;
+    ctx.font = '900 44px "Fraunces Display"';
+    ctx.fillText('SCORE', 90, 195);
+
+    ctx.fillStyle = muted;
+    ctx.font = '500 22px "Plex Data"';
+    ctx.fillText((lastCalc.prof.label + ' · ' + DATA.cities[state.city].label + ' → ' + lastCalc.dest.label).toUpperCase(), 90, 240);
+
+    ctx.fillStyle = stamp;
+    ctx.font = '600 128px "Plex Data"';
+    ctx.fillText(lastCalc.score + '/100', 90, 400);
+    ctx.fillStyle = ink;
+    ctx.font = '900 42px "Fraunces Display"';
+    wrapText(ctx, lastCalc.v.text, 90, 470, W-260, 48);
+
+    ctx.fillStyle = muted;
+    ctx.font = '400 22px "Plex Body"';
+    wrapText(ctx, lastCalc.ratio.toFixed(1) + 'x career earning uplift after rent, tax and cost of living, vs ' + DATA.cities[state.city].label, 90, 565, W-180, 30);
+
+    ctx.strokeStyle = dark ? 'rgba(237,239,231,0.15)' : 'rgba(10,15,30,0.12)';
+    ctx.beginPath(); ctx.moveTo(90,630); ctx.lineTo(W-90,630); ctx.stroke();
+
+    ctx.fillStyle = muted; ctx.font = '600 18px "Plex Data"';
+    ctx.fillText('NET PAY · ' + DATA.cities[state.city].label.toUpperCase(), 90, 680);
+    ctx.fillStyle = ink; ctx.font = '600 30px "Plex Data"';
+    ctx.fillText('₦' + fmt(lastCalc.y0.nairaNet), 90, 720);
+
+    ctx.fillStyle = muted; ctx.font = '600 18px "Plex Data"';
+    ctx.fillText('NET PAY · ' + lastCalc.dest.label.toUpperCase(), 90, 780);
+    ctx.fillStyle = ink; ctx.font = '600 30px "Plex Data"';
+    ctx.fillText(money(lastCalc.y0.foreignNetLocal, lastCalc.dest.symbol, lastCalc.dest.suffix), 90, 820);
+
+    ctx.fillStyle = accent;
+    for(var i=0;i<5;i++){ ctx.fillStyle = i<lastCalc.dest.visa ? accent : (dark? '#2A3352':'#DEE2D6'); roundRect(ctx, 90+i*40, 870, 32, 14, 4); ctx.fill(); }
+    ctx.fillStyle = muted; ctx.font = '500 18px "Plex Body"';
+    ctx.fillText('Study visa difficulty: ' + lastCalc.dest.visa + '/5', 90, 915);
+
+    ctx.strokeStyle = dark ? 'rgba(237,239,231,0.15)' : 'rgba(10,15,30,0.12)';
+    ctx.beginPath(); ctx.moveTo(90,960); ctx.lineTo(W-90,960); ctx.stroke();
+
+    ctx.fillStyle = muted; ctx.font = '400 20px "Plex Body"';
+    wrapText(ctx, 'A Master\'s at one of TGM\'s partner universities can get you there in ' + lastCalc.dest.studyMonths + '.', 90, 1010, W-180, 28);
+
+    ctx.fillStyle = accent; ctx.font = '600 22px "Plex Data"';
+    ctx.fillText('tgm.ng/global-career-score', 90, 1230);
+    ctx.fillStyle = muted; ctx.font = '400 16px "Plex Body"';
+    ctx.fillText('Illustrative benchmark data — not financial or immigration advice.', 90, 1270);
+  }
+  function roundRect(ctx,x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+  }
+  function wrapText(ctx, text, x, y, maxWidth, lineHeight){
+    var words = text.split(' '); var line=''; var yy=y;
+    for(var n=0;n<words.length;n++){
+      var test = line + words[n] + ' ';
+      if(ctx.measureText(test).width > maxWidth && n>0){ ctx.fillText(line, x, yy); line = words[n]+' '; yy += lineHeight; }
+      else{ line = test; }
+    }
+    ctx.fillText(line, x, yy);
+  }
+
+})();
+</script>
