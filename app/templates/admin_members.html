@@ -1,0 +1,56 @@
+{% extends "admin_base.html" %}
+{% block title %}Members — TGM Admin{% endblock %}
+{% block admin_content %}
+<div class="a-head">
+  <h1>Members</h1>
+  <p>{{ members|length }} onboarded member{{ '' if members|length == 1 else 's' }} · ranked by community activity</p>
+</div>
+
+<div class="stats">
+  <div class="stat"><b>{{ totals.members }}</b><small>Total members</small></div>
+  <div class="stat"><b>{{ totals.posts }}</b><small>Posts</small></div>
+  <div class="stat"><b>{{ totals.comments }}</b><small>Comments</small></div>
+  <div class="stat danger"><b>{{ totals.frozen }}</b><small>Frozen accounts</small></div>
+</div>
+
+{% if members %}
+<div class="tbl-wrap">
+  <table>
+    <thead>
+      <tr><th>Member</th><th>Type</th><th>Status</th><th>Posts</th><th>Comments</th><th>Channels</th><th>Last seen</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      {% for m in members %}
+      <tr>
+        <td>
+          <a class="who" href="{{ url_for('admin.admin_member', sid=m.id) }}">
+            <span class="av">{% if m.has_avatar %}<img src="{{ url_for('social.avatar', user_id=m.id) }}" alt="" />{% else %}{{ m.initials }}{% endif %}</span>
+            <span><b>{{ m.name }}</b><small>{{ m.email }}</small></span>
+          </a>
+        </td>
+        <td><span class="badge {{ m.user_type }}">{{ 'Abroad' if m.user_type == 'abroad' else 'Aspiring' }}</span></td>
+        <td>{% if m.is_banned %}<span class="badge frozen">Frozen</span>{% else %}<span class="badge active">Active</span>{% endif %}</td>
+        <td><span class="num">{{ m.posts }}</span></td>
+        <td><span class="num">{{ m.comments }}</span></td>
+        <td>{{ m.channels }}</td>
+        <td>{{ m.last_seen }}</td>
+        <td>
+          <div class="row-actions">
+            <a class="btn btn-sm" href="{{ url_for('admin.admin_member', sid=m.id) }}">View</a>
+            <form class="inline" method="post" action="{{ url_for('admin.freeze_member', sid=m.id) }}">
+              <button class="btn btn-sm {{ 'btn-green' if m.is_banned else 'btn-warn' }}" type="submit">{{ 'Unfreeze' if m.is_banned else 'Freeze' }}</button>
+            </form>
+            <form class="inline" method="post" action="{{ url_for('admin.delete_member', sid=m.id) }}" onsubmit="return confirm('Permanently delete {{ m.name }} and all their posts? This cannot be undone.');">
+              <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty">No members yet.</div>
+{% endif %}
+{% endblock %}

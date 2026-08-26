@@ -1,0 +1,20 @@
+{% macro avatar(user, size=40) -%}
+<span class="avatar av-c{{ user.id % 5 }}" style="width:{{ size }}px;height:{{ size }}px;font-size:{{ (size * 0.4) | int }}px;">
+  {%- if user.has_avatar -%}
+  <img src="{{ url_for('social.avatar', user_id=user.id) }}" alt="{{ user.name }}" />
+  {%- else -%}{{ user.initials }}{%- endif -%}
+</span>
+{%- endmacro %}
+
+{% macro post_avatar(post, size=40) -%}
+{% set clickable = post.author_id and not post.is_ai %}
+{%- if clickable %}<a class="pa-link" href="{{ url_for('social.profile', user_id=post.author_id) }}" title="View profile">{% endif -%}
+<span class="avatar {{ 'ai' if post.is_ai else 'av-c' ~ ((post.author_id or 0) % 5) }}" style="width:{{ size }}px;height:{{ size }}px;font-size:{{ (size * 0.4) | int }}px;">
+  {%- if post.is_ai -%}
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:60%;height:60%;"><path d="M12 3l2.1 4.7L19 9l-3.6 3.3.9 4.9L12 15l-4.3 2.2.9-4.9L5 9l4.9-1.3z"/></svg>
+  {%- elif post.has_avatar -%}
+  <img src="{{ url_for('social.avatar', user_id=post.author_id) }}" alt="" />
+  {%- else -%}{{ post.initials }}{%- endif -%}
+</span>
+{%- if clickable %}</a>{% endif -%}
+{%- endmacro %}

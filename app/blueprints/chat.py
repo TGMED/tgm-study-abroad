@@ -1,6 +1,6 @@
 import datetime
 
-from flask import Blueprint, jsonify, render_template, request, session
+from flask import Blueprint, jsonify, redirect, render_template, request, session, url_for
 
 from extensions import get_db, login_required
 from services.gemini import GeminiError, call_gemini
@@ -43,6 +43,9 @@ def _save_message(db, student_id, role, content):
 def chat_page():
     student_id = session["student_id"]
     db = get_db()
+    onboarded = db.execute("SELECT onboarded FROM students WHERE id = ?", (student_id,)).fetchone()
+    if onboarded is not None and not onboarded["onboarded"]:
+        return redirect(url_for("social.onboarding"))
     profile = _load_profile(db, student_id)
     history = _load_history(db, student_id)
 

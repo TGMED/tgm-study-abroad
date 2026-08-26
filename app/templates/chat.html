@@ -1,20 +1,19 @@
-{% extends "base.html" %}
-{% block title %}Chat with Amara — TGM{% endblock %}
-{% block content %}
-<div class="site" style="max-width:640px;">
-  <header class="masthead">
-    <div class="wordmark">CHAT WITH <span class="flip">AMARA</span></div>
-  </header>
+{% extends "app_base.html" %}
+{% block title %}Amara AI — TGM{% endblock %}
+{% block page_title %}Amara AI{% endblock %}
+{% block back %}<a class="backbtn" href="{{ url_for('social.communities') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>Back</a>{% endblock %}
+{% block app_content %}
+<div class="amara-wrap">
+  <div class="amara-head">
+    <span class="amara-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3l2.1 4.7L19 9l-3.6 3.3.9 4.9L12 15l-4.3 2.2.9-4.9L5 9l4.9-1.3z"/></svg></span>
+    <div>
+      <b>Amara</b>
+      <small>● Your AI study-abroad counsellor</small>
+      {% if profile and profile.destination %}<div style="font-size:12px;color:var(--muted);">{{ profile.profession or 'Your profile' }} → {{ (profile.destination or '')|upper }}{% if profile.score is not none %} · score {{ profile.score }}/100{% endif %}</div>{% endif %}
+    </div>
+  </div>
 
-  {% if profile and profile.destination %}
-  <p class="eyebrow">Your TGM AI counsellor</p>
-  <p class="dek">Picking up from your ROI result — {{ profile.profession or 'your profile' }} → {{ (profile.destination or '')|upper }}{% if profile.score is not none %}, score {{ profile.score }}/100{% endif %}.</p>
-  {% else %}
-  <p class="eyebrow">Your TGM AI counsellor</p>
-  <p class="dek">Ask Amara anything about studying abroad — costs, visas, timelines, and programme options.</p>
-  {% endif %}
-
-  <div class="card chat-window" id="chatWindow">
+  <div class="chat-window" id="chatWindow">
     {% for m in messages %}
       <div class="chat-bubble chat-{{ m.role }}">{{ m.content }}</div>
     {% endfor %}
@@ -22,12 +21,11 @@
   <p class="chat-error" id="chatError" style="display:none;"></p>
 
   <div class="chat-composer">
-    <input id="chatInput" placeholder="Ask Amara anything…" autocomplete="off" />
+    <input id="chatInput" placeholder="Ask Amara anything about studying abroad…" autocomplete="off" />
     <button id="chatSendBtn">Send</button>
   </div>
 </div>
 {% endblock %}
-
 {% block extra_scripts %}
 <script>window.__TGM_NEEDS_OPENING__ = {{ 'true' if needs_opening else 'false' }};</script>
 <script src="{{ url_for('static', filename='js/chat.js') }}"></script>

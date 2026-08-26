@@ -14,7 +14,16 @@ DESTINATION_KB = {
     "germany": kb.KB_GERMANY,
 }
 
-COMMUNITY_ROOMS = ("uk", "canada", "germany", "poland", "ireland", "general")
+COMMUNITY_ROOMS = ("uk", "canada", "ireland", "usa", "europe")
+
+# Display metadata for each community room (label + country-code badge).
+COMMUNITY_ROOM_META = {
+    "uk": {"label": "United Kingdom", "code": "GB", "blurb": "Students & pros across the UK"},
+    "canada": {"label": "Canada", "code": "CA", "blurb": "PGWP, PR routes & campus life"},
+    "ireland": {"label": "Ireland", "code": "IE", "blurb": "EU tech hub & English-taught study"},
+    "usa": {"label": "United States", "code": "US", "blurb": "F-1, OPT & the American route"},
+    "europe": {"label": "Europe", "code": "EU", "blurb": "Schengen, affordable tuition & more"},
+}
 
 AMARA_PERSONA = (
     "You are Amara, TGM Education's study-abroad AI counsellor. TGM Education is a "

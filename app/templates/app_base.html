@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>{% block title %}TGM Community{% endblock %}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preload" as="font" type="font/woff2" href="{{ url_for('static', filename='fonts/fraunces-display-900.woff2') }}" crossorigin>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/social.css') }}" />
+{% block extra_head %}{% endblock %}
+</head>
+<body class="app">
+
+{% set ep = request.endpoint or '' %}
+<div class="app-shell">
+
+  <!-- ============ Sidebar ============ -->
+  <aside class="side">
+    <a class="side-brand" href="{{ url_for('roi.home') }}">TGM<span>·</span>community</a>
+    <nav class="side-nav">
+      <a href="{{ url_for('social.dashboard') }}" class="{{ 'on' if ep == 'social.dashboard' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>
+        <span>Dashboard</span>
+      </a>
+      <a href="{{ url_for('social.communities') }}" class="{{ 'on' if ep in ('social.communities','community.community_room') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        <span>Communities</span>
+      </a>
+      <a href="{{ url_for('social.refer') }}" class="{{ 'on' if ep == 'social.refer' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M12 8S10 3 7 4s0 4 5 4M12 8s2-5 5-4-.2 4-5 4"/></svg>
+        <span>Refer</span><em class="soon">Soon</em>
+      </a>
+      <a href="{{ url_for('chat.chat_page') }}" class="{{ 'on' if ep == 'chat.chat_page' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3l2.1 4.7L19 9l-3.6 3.3.9 4.9L12 15l-4.3 2.2.9-4.9L5 9l4.9-1.3z"/></svg>
+        <span>Amara AI</span>
+      </a>
+    </nav>
+
+    <div class="side-foot">
+      {% if me %}
+      <a class="side-me" href="{{ url_for('social.me') }}">
+        {% from "_avatar.html" import avatar %}{{ avatar(me, 38) }}
+        <span class="side-me-txt"><b>{{ me.name }}</b><small>{{ 'Already abroad' if me.user_type == 'abroad' else 'Planning to go' }}</small></span>
+      </a>
+      <div class="side-foot-links">
+        <a href="{{ url_for('social.settings') }}" class="{{ 'on' if ep == 'social.settings' }}">Settings</a>
+        <a href="{{ url_for('auth.logout') }}">Log out</a>
+      </div>
+      {% endif %}
+    </div>
+  </aside>
+
+  <!-- ============ Main ============ -->
+  <main class="main">
+    <header class="topbar">
+      {% block back %}{% endblock %}
+      <div class="topbar-title">{% block page_title %}{% endblock %}</div>
+      {% if me %}<a class="topbar-me" href="{{ url_for('social.me') }}">{% from "_avatar.html" import avatar %}{{ avatar(me, 36) }}</a>{% endif %}
+    </header>
+
+    <div class="content {% block content_mod %}{% endblock %}">
+      {% block app_content %}{% endblock %}
+    </div>
+  </main>
+
+  <!-- ============ Mobile bottom nav ============ -->
+  <nav class="botnav">
+    <a href="{{ url_for('social.dashboard') }}" class="{{ 'on' if ep == 'social.dashboard' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg></a>
+    <a href="{{ url_for('social.communities') }}" class="{{ 'on' if ep in ('social.communities','community.community_room') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></a>
+    <a href="{{ url_for('chat.chat_page') }}" class="{{ 'on' if ep == 'chat.chat_page' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3l2.1 4.7L19 9l-3.6 3.3.9 4.9L12 15l-4.3 2.2.9-4.9L5 9l4.9-1.3z"/></svg></a>
+    {% if me %}<a href="{{ url_for('social.me') }}" class="{{ 'on' if ep in ('social.profile','social.settings') }}">{% from "_avatar.html" import avatar %}{{ avatar(me, 26) }}</a>{% endif %}
+  </nav>
+
+</div>
+
+<div id="tgmToast" class="toast" role="status" aria-live="polite"></div>
+<script>
+window.tgmToast = function (msg, ok) {
+  var t = document.getElementById('tgmToast');
+  if (!t) return;
+  t.textContent = msg;
+  t.className = 'toast show' + (ok === false ? ' err' : '');
+  clearTimeout(window.__ttId);
+  window.__ttId = setTimeout(function () { t.className = 'toast'; }, 2600);
+};
+</script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

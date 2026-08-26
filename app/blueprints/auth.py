@@ -33,9 +33,7 @@ def _safe_next(raw):
 
 @auth_bp.route("/join", methods=["GET", "POST"])
 def join():
-    next_url = _safe_next(request.values.get("next")) or url_for(
-        "community.community_room", room="general"
-    )
+    next_url = _safe_next(request.values.get("next")) or url_for("social.dashboard")
 
     # Already signed in? Skip the name step.
     if session.get("student_id"):

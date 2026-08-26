@@ -200,6 +200,23 @@ def init_db():
             PRIMARY KEY (post_id, student_id)
         );
 
+        CREATE TABLE IF NOT EXISTS room_members (
+            student_id INTEGER NOT NULL REFERENCES students(id),
+            room TEXT NOT NULL,
+            joined_at TEXT NOT NULL,
+            PRIMARY KEY (student_id, room)
+        );
+
+        CREATE TABLE IF NOT EXISTS direct_messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sender_id INTEGER NOT NULL REFERENCES students(id),
+            recipient_id INTEGER NOT NULL REFERENCES students(id),
+            content TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            read_at TEXT,
+            shared_post_id INTEGER REFERENCES community_posts(id)
+        );
+
         CREATE TABLE IF NOT EXISTS community_reports (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             post_id INTEGER NOT NULL REFERENCES community_posts(id),
@@ -217,5 +234,26 @@ def init_db():
         conn.execute("ALTER TABLE leads ADD COLUMN grade TEXT")
     if "forwarded_to_hubspot" not in existing_columns:
         conn.execute("ALTER TABLE leads ADD COLUMN forwarded_to_hubspot INTEGER NOT NULL DEFAULT 0")
+
+    # Social-profile columns on students (added incrementally).
+    student_columns = {row[1] for row in conn.execute("PRAGMA table_info(students)")}
+    student_migrations = {
+        "user_type": "TEXT",          # 'abroad' | 'aspiring'
+        "avatar_path": "TEXT",         # uploaded avatar filename
+        "location": "TEXT",            # where they are now
+        "destination": "TEXT",         # where they are / want to be abroad
+        "headline": "TEXT",            # short tagline
+        "bio": "TEXT",
+        "study_history": "TEXT",       # JSON list
+        "work_history": "TEXT",        # JSON list
+        "onboarded": "INTEGER NOT NULL DEFAULT 0",
+    }
+    for col, decl in student_migrations.items():
+        if col not in student_columns:
+            conn.execute(f"ALTER TABLE students ADD COLUMN {col} {decl}")
+
+    dm_columns = {row[1] for row in conn.execute("PRAGMA table_info(direct_messages)")}
+    if "shared_post_id" not in dm_columns:
+        conn.execute("ALTER TABLE direct_messages ADD COLUMN shared_post_id INTEGER")
     conn.commit()
     conn.close()

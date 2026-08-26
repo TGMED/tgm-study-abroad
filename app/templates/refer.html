@@ -1,0 +1,16 @@
+{% extends "app_base.html" %}
+{% block title %}Refer — TGM{% endblock %}
+{% block page_title %}Refer{% endblock %}
+{% block app_content %}
+<div class="soon-hero">
+  <div class="soon-ill">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M5 12v9h14v-9M12 8v13M12 8S10 3 7 4s0 4 5 4M12 8s2-5 5-4-.2 4-5 4"/></svg>
+  </div>
+  <span class="soon-badge">Coming soon</span>
+  <h1>Refer someone, open a door</h1>
+  <p>Soon, members already abroad will be able to refer aspiring travellers directly to universities, employers and opportunities — and earn rewards for every successful move. We're building it now.</p>
+  <div style="margin-top:26px;">
+    <a class="btn btn-primary" href="{{ url_for('social.communities') }}">Explore communities meanwhile →</a>
+  </div>
+</div>
+{% endblock %}

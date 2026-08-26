@@ -1,11 +1,11 @@
 import datetime
 import re
 
-from flask import Blueprint, abort, jsonify, render_template, request, session
+from flask import Blueprint, abort, jsonify, redirect, render_template, request, session, url_for
 
 from extensions import get_db, login_required
 from services.gemini import GeminiError, call_gemini
-from services.prompts import COMMUNITY_ROOMS, build_community_system_prompt
+from services.prompts import COMMUNITY_ROOMS, COMMUNITY_ROOM_META, build_community_system_prompt
 
 community_bp = Blueprint("community", __name__)
 
@@ -28,11 +28,21 @@ def _col(row, key, default=0):
     return row[key] if key in row.keys() else default
 
 
+def _initials(label):
+    parts = [w for w in (label or "").split() if w]
+    if not parts:
+        return "M"
+    return "".join(w[0] for w in parts[:2]).upper()
+
+
 def _post_dict(row):
     return {
         "id": row["id"],
         "room": row["room"],
         "author_label": row["author_label"],
+        "author_id": row["student_id"],
+        "has_avatar": bool(_col(row, "author_avatar", None)),
+        "initials": _initials(row["author_label"]),
         "is_ai": bool(row["is_ai"]),
         "parent_id": row["parent_id"],
         "content": row["content"],
@@ -42,6 +52,13 @@ def _post_dict(row):
         "reply_count": _col(row, "reply_count", 0),
         "mine": row["student_id"] is not None and row["student_id"] == session.get("student_id"),
     }
+
+
+# A post row joined with its author's avatar, so the feed can show faces.
+_POST_JOIN = (
+    "SELECT p.*, s.avatar_path AS author_avatar "
+    "FROM community_posts p LEFT JOIN students s ON s.id = p.student_id"
+)
 
 
 # Every post row is fetched with its vote tally, the current student's own
@@ -79,19 +96,21 @@ def _sort_key(sort):
 def community_room(room):
     _room_or_404(room)
     db = get_db()
+
+    # Signed-in but not-yet-onboarded members finish their profile first.
+    me = db.execute("SELECT onboarded FROM students WHERE id = ?", (session["student_id"],)).fetchone()
+    if me is not None and not me["onboarded"]:
+        return redirect(url_for("social.onboarding"))
+
     top_posts = db.execute(
-        """
-        SELECT * FROM community_posts
-        WHERE room = ? AND parent_id IS NULL AND is_hidden = 0
-        ORDER BY id DESC LIMIT 50
-        """,
+        _POST_JOIN + " WHERE p.room = ? AND p.parent_id IS NULL AND p.is_hidden = 0 ORDER BY p.id DESC LIMIT 50",
         (room,),
     ).fetchall()
 
     thread = []
     for post in reversed(top_posts):
         replies = db.execute(
-            "SELECT * FROM community_posts WHERE parent_id = ? AND is_hidden = 0 ORDER BY id ASC",
+            _POST_JOIN + " WHERE p.parent_id = ? AND p.is_hidden = 0 ORDER BY p.id ASC",
             (post["id"],),
         ).fetchall()
         thread.append({"post": _post_dict(post), "replies": [_post_dict(r) for r in replies]})
@@ -100,7 +119,17 @@ def community_room(room):
         "SELECT COALESCE(MAX(id), 0) AS m FROM community_posts WHERE room = ?", (room,)
     ).fetchone()["m"]
 
-    return render_template("community_room.html", room=room, thread=thread, last_id=last_id, rooms=COMMUNITY_ROOMS)
+    room_label = COMMUNITY_ROOM_META.get(room, {}).get("label", room.title())
+    member_count = db.execute(
+        "SELECT COUNT(*) AS c FROM room_members WHERE room = ?", (room,)
+    ).fetchone()["c"]
+    joined = db.execute(
+        "SELECT 1 FROM room_members WHERE room = ? AND student_id = ?", (room, session["student_id"])
+    ).fetchone() is not None
+    return render_template(
+        "community_room.html", room=room, room_label=room_label, thread=thread,
+        last_id=last_id, member_count=member_count, joined=joined,
+    )
 
 
 @community_bp.route("/api/community/<room>/posts")
@@ -110,7 +139,7 @@ def api_list_posts(room):
     since = request.args.get("since", type=int, default=0)
     db = get_db()
     rows = db.execute(
-        "SELECT * FROM community_posts WHERE room = ? AND id > ? AND is_hidden = 0 ORDER BY id ASC",
+        _POST_JOIN + " WHERE p.room = ? AND p.id > ? AND p.is_hidden = 0 ORDER BY p.id ASC",
         (room, since),
     ).fetchall()
     return jsonify({"ok": True, "posts": [_post_dict(r) for r in rows]})
@@ -153,7 +182,7 @@ def api_create_post(room):
     if MENTION_RE.search(content):
         ai_reply_row = _generate_ai_reply(db, room, thread_root_id=parent_id or post_id)
 
-    post_row = db.execute("SELECT * FROM community_posts WHERE id = ?", (post_id,)).fetchone()
+    post_row = db.execute(_POST_JOIN + " WHERE p.id = ?", (post_id,)).fetchone()
     return jsonify({
         "ok": True,
         "post": _post_dict(post_row),
@@ -190,7 +219,7 @@ def _generate_ai_reply(db, room, thread_root_id):
         (room, thread_root_id, reply_text, now),
     )
     db.commit()
-    return db.execute("SELECT * FROM community_posts WHERE id = ?", (cur.lastrowid,)).fetchone()
+    return db.execute(_POST_JOIN + " WHERE p.id = ?", (cur.lastrowid,)).fetchone()
 
 
 @community_bp.route("/api/community/posts/<int:post_id>/report", methods=["POST"])

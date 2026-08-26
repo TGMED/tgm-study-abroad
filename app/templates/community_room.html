@@ -1,54 +1,140 @@
-{% extends "base.html" %}
-{% block title %}Community — {{ room|upper }} — TGM{% endblock %}
-{% block content %}
-<div class="site" style="max-width:640px;">
-  <header class="masthead">
-    <div class="wordmark">STUDENT <span class="flip">COMMUNITY</span></div>
-  </header>
+{% extends "app_base.html" %}
+{% from "_avatar.html" import post_avatar %}
+{% block title %}#{{ room_label }} — TGM Community{% endblock %}
+{% block page_title %}Community{% endblock %}
+{% block content_mod %}flush{% endblock %}
+{% block back %}<a class="backbtn" href="{{ url_for('social.communities') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>Back</a>{% endblock %}
+{% block app_content %}
+<div class="slack">
 
-  <div class="room-tabs">
-    {% for r in rooms %}
-    <a href="{{ url_for('community.community_room', room=r) }}" class="room-tab {{ 'active' if r == room else '' }}">{{ r|upper if r != 'general' else 'General' }}</a>
-    {% endfor %}
-  </div>
+  <!-- Channels rail -->
+  <aside class="ch-rail">
+    <div class="ch-workspace">TGM <span>Community</span></div>
+    <div class="ch-section">Channels</div>
+    <nav class="ch-list">
+      {% for r in nav_rooms %}
+      <a class="ch-item {{ 'on' if r.key == room }}" href="{{ url_for('community.community_room', room=r.key) }}"><span class="hash">#</span>{{ r.label }}</a>
+      {% endfor %}
+    </nav>
+    <div class="ch-section">Assistant</div>
+    <a class="ch-item" href="{{ url_for('chat.chat_page') }}"><span class="star">✦</span>Amara AI</a>
+  </aside>
 
-  <p class="dek" style="margin-top:14px;">Talk with other students heading to {{ room|upper if room != 'general' else 'anywhere' }}. Mention <b>@amara</b> in a post to bring the AI counsellor into the thread.</p>
-
-  <div id="threadList" data-room="{{ room }}" data-last-id="{{ last_id }}">
-    {% for item in thread %}
-    <div class="post-card" data-post-id="{{ item.post.id }}">
-      <div class="post-head">
-        <span class="post-author {{ 'post-author-ai' if item.post.is_ai else '' }}">{{ item.post.author_label }}</span>
-        <span class="post-time">{{ item.post.created_at }}</span>
-        {% if not item.post.is_ai %}<button class="post-report" data-post-id="{{ item.post.id }}">Report</button>{% endif %}
+  <!-- Chat pane -->
+  <div class="chat">
+    <header class="chat-head">
+      <div class="chat-title"><span class="hash">#</span>{{ room_label }}<span class="chat-members">{{ member_count }} member{{ '' if member_count == 1 else 's' }}</span></div>
+      <div class="chat-head-actions">
+        <div class="sb-input chat-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="roomSearch" placeholder="Search messages…" autocomplete="off" />
+        </div>
+        <button class="ch-join {{ 'joined' if joined }}" id="chJoin" data-room="{{ room }}">{{ 'Joined ✓' if joined else 'Join' }}</button>
       </div>
-      <div class="post-content">{{ item.post.content }}</div>
-      <div class="post-replies">
-        {% for reply in item.replies %}
-        <div class="post-card post-reply" data-post-id="{{ reply.id }}">
+    </header>
+
+    <div class="chat-scroll" id="chatScroll">
+      <div class="chat-intro">
+        <div class="chat-intro-hash">#</div>
+        <h2>Welcome to #{{ room_label }}</h2>
+        <p>This is the start of the <b>#{{ room_label }}</b> channel. Say hello, ask a question, or mention <b>@amara</b> for AI help.</p>
+      </div>
+
+      <div id="threadList" data-room="{{ room }}" data-last-id="{{ last_id }}">
+        {% for item in thread %}
+        <div class="card post-card" data-post-id="{{ item.post.id }}" id="post-{{ item.post.id }}">
           <div class="post-head">
-            <span class="post-author {{ 'post-author-ai' if reply.is_ai else '' }}">{{ reply.author_label }}</span>
-            <span class="post-time">{{ reply.created_at }}</span>
-            {% if not reply.is_ai %}<button class="post-report" data-post-id="{{ reply.id }}">Report</button>{% endif %}
+            {{ post_avatar(item.post, 40) }}
+            <div class="ph-meta">
+              <span class="post-author {{ 'post-author-ai' if item.post.is_ai else '' }}">{{ item.post.author_label }}</span>
+              <span class="post-time" data-iso="{{ item.post.created_at }}">{{ item.post.created_at }}</span>
+            </div>
+            <div class="ph-actions">
+              <button class="post-share" data-post-id="{{ item.post.id }}" title="Share">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>
+              </button>
+              {% if not item.post.is_ai %}<button class="post-report" data-post-id="{{ item.post.id }}">Report</button>{% endif %}
+            </div>
           </div>
-          <div class="post-content">{{ reply.content }}</div>
+          <div class="post-content">{{ item.post.content }}</div>
+          <div class="post-replies">
+            {% for reply in item.replies %}
+            <div class="card post-card post-reply" data-post-id="{{ reply.id }}" id="post-{{ reply.id }}">
+              <div class="post-head">
+                {{ post_avatar(reply, 28) }}
+                <div class="ph-meta">
+                  <span class="post-author {{ 'post-author-ai' if reply.is_ai else '' }}">{{ reply.author_label }}</span>
+                  <span class="post-time" data-iso="{{ reply.created_at }}">{{ reply.created_at }}</span>
+                </div>
+                <div class="ph-actions">
+                  <button class="post-share" data-post-id="{{ reply.id }}" title="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg></button>
+                  {% if not reply.is_ai %}<button class="post-report" data-post-id="{{ reply.id }}">Report</button>{% endif %}
+                </div>
+              </div>
+              <div class="post-content">{{ reply.content }}</div>
+            </div>
+            {% endfor %}
+          </div>
+          <button class="post-reply-btn" data-post-id="{{ item.post.id }}">Reply in thread</button>
         </div>
         {% endfor %}
       </div>
-      <button class="post-reply-btn" data-post-id="{{ item.post.id }}">Reply</button>
     </div>
-    {% endfor %}
-  </div>
 
-  <div class="composer-card">
-    <input type="hidden" id="replyToId" value="" />
-    <p class="reply-context" id="replyContext" style="display:none;"></p>
-    <textarea id="postInput" placeholder="Share something with the group, or @amara a question…" rows="2"></textarea>
-    <button id="postSendBtn">Post</button>
+    <div class="chat-composer-wrap">
+      <input type="hidden" id="replyToId" value="" />
+      <p class="reply-context" id="replyContext" style="display:none;"></p>
+      <div class="chat-input">
+        <textarea id="postInput" rows="1" placeholder="Message #{{ room_label }}… (Enter to send)"></textarea>
+        <button id="postSendBtn">Send</button>
+      </div>
+      <div class="chat-hint">Mention <b>@amara</b> to bring the AI counsellor into the channel.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Share modal (copy link) -->
+<div class="share-backdrop" id="shareModal">
+  <div class="share-card">
+    <button class="share-close" id="shareClose">✕</button>
+    <h3>Share message</h3>
+    <div class="share-preview" id="sharePreview"></div>
+    <div class="share-copy">
+      <input id="shareUrl" readonly />
+      <button class="btn btn-ghost" id="shareCopyBtn">Copy link</button>
+    </div>
   </div>
 </div>
 {% endblock %}
-
 {% block extra_scripts %}
 <script src="{{ url_for('static', filename='js/community.js') }}"></script>
+<script>
+// Slack-style: keep the message list scrolled to the newest, and grow the input.
+(function () {
+  var scroll = document.getElementById('chatScroll');
+  var list = document.getElementById('threadList');
+  var input = document.getElementById('postInput');
+  function toBottom() { if (scroll) scroll.scrollTop = scroll.scrollHeight; }
+  toBottom();
+  if (list) new MutationObserver(toBottom).observe(list, { childList: true, subtree: true });
+  if (input) {
+    input.addEventListener('input', function () {
+      input.style.height = 'auto';
+      input.style.height = Math.min(input.scrollHeight, 160) + 'px';
+    });
+  }
+  var join = document.getElementById('chJoin');
+  if (join) join.addEventListener('click', function () {
+    var room = join.getAttribute('data-room'); join.disabled = true;
+    fetch('/api/community/' + room + '/membership', { method: 'POST' })
+      .then(function (r) { return r.json(); }).then(function (d) {
+        join.disabled = false;
+        if (!d.ok) return;
+        join.textContent = d.joined ? 'Joined ✓' : 'Join';
+        join.classList.toggle('joined', d.joined);
+        if (window.tgmToast) window.tgmToast(d.joined ? 'Joined #' + room : 'Left #' + room);
+      }).catch(function () { join.disabled = false; });
+  });
+})();
+</script>
 {% endblock %}

@@ -1,0 +1,177 @@
+{% extends "app_base.html" %}
+{% from "_avatar.html" import avatar %}
+{% block title %}Dashboard — TGM{% endblock %}
+{% block page_title %}Home{% endblock %}
+{% block content_mod %}wide{% endblock %}
+{% block app_content %}
+<div class="dw">
+
+  <!-- Welcome -->
+  <section class="dw-welcome">
+    <div class="dw-glow"></div>
+    <div class="dw-welcome-txt">
+      <span class="dw-status">{{ 'Already abroad' if prof.user_type == 'abroad' else 'Planning to go abroad' }}</span>
+      <h1>Welcome back, {{ prof.name.split(' ')[0] }}</h1>
+      <p>
+        {% if prof.user_type == 'abroad' and questions_total %}{{ questions_total }} {{ 'person' if questions_total == 1 else 'people' }} asked questions in the community this week. Answering one takes two minutes.
+        {% elif prof.user_type == 'abroad' %}Thanks for being here to guide others. Share your journey and help someone make their move.
+        {% else %}Your journey starts with the right people. Connect, ask questions, and get closer to your move.{% endif %}
+      </p>
+      <div class="dw-actions">
+        {% if questions %}
+        <a class="dw-btn dw-btn-primary" href="{{ url_for('community.community_room', room=questions[0].room, post=questions[0].id) }}">Answer a question</a>
+        {% else %}
+        <a class="dw-btn dw-btn-primary" href="{{ url_for('social.communities') }}">Explore communities</a>
+        {% endif %}
+        <a class="dw-btn dw-btn-secondary" href="{{ url_for('community.community_room', room=joined_rooms[0].key) if joined_rooms else url_for('social.communities') }}">Share an update</a>
+      </div>
+    </div>
+    <div class="dw-photo">
+      <span class="dw-ring" aria-hidden="true"></span>
+      <span class="dw-photo-holder">
+        {% if prof.has_avatar %}<img src="{{ url_for('social.avatar', user_id=prof.id) }}" alt="{{ prof.name }}" />{% else %}{{ prof.initials }}{% endif %}
+      </span>
+      <span class="dw-verified" title="Verified member"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span>
+    </div>
+  </section>
+
+  <!-- Stat buttons -->
+  <div class="dw-stats">
+    <a class="dw-stat" href="{{ url_for('social.communities') }}">
+      <span class="dw-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>
+      <span class="dw-stat-txt"><b>{{ stats.communities }}</b><small>Communities joined</small></span>
+    </a>
+    <a class="dw-stat" href="{{ url_for('social.communities') }}">
+      <span class="dw-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M2 20a7 7 0 0 1 14 0"/><circle cx="18" cy="9" r="2.5"/><path d="M17 20a5 5 0 0 1 5-3"/></svg></span>
+      <span class="dw-stat-txt"><b>{{ stats.people }}</b><small>Community members</small></span>
+    </a>
+    <a class="dw-stat" href="{{ url_for('social.me') }}">
+      <span class="dw-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span>
+      <span class="dw-stat-txt"><b>{{ stats.posts }}</b><small>Posts shared</small></span>
+    </a>
+    <a class="dw-stat" href="{{ url_for('social.communities') }}">
+      <span class="dw-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 1 0 9 9"/><path d="M9.5 9a2.5 2.5 0 1 1 3 2.5c-.7.3-1 .8-1 1.5"/><circle cx="11.5" cy="16.5" r=".6" fill="currentColor" stroke="none"/></svg></span>
+      <span class="dw-stat-txt"><b>{{ questions_total }}</b><small>Questions to answer</small></span>
+    </a>
+  </div>
+
+  <!-- Main grid -->
+  <div class="dw-grid">
+    <div class="dw-main">
+
+      {% if questions %}
+      <section class="dw-card">
+        <div class="dw-card-head"><h2>Questions waiting on you</h2><a href="{{ url_for('social.communities') }}">See all {{ questions_total }}</a></div>
+        <p class="dw-sub">From people heading where you already are.</p>
+        <div class="dw-qlist">
+          {% for q in questions %}
+          <div class="dw-qrow">
+            <a class="dw-av dw-av-{{ (q.author_id or 0) % 3 }}" href="{{ url_for('social.profile', user_id=q.author_id) if q.author_id else '#' }}">
+              {% if q.has_avatar %}<img src="{{ url_for('social.avatar', user_id=q.author_id) }}" alt="" />{% else %}{{ q.initials }}{% endif %}
+            </a>
+            <div class="dw-qtxt">
+              <div class="dw-qname">{{ q.author }} <span>· {{ q.context }}</span></div>
+              <div class="dw-qbody">{{ q.body }}</div>
+            </div>
+            <a class="dw-btn-sm" href="{{ url_for('community.community_room', room=q.room, post=q.id) }}">Reply</a>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      <section class="dw-activity">
+        <div class="dw-act-head">
+          <h2>Activity</h2>
+          <div class="dw-filters" id="dwFilters">
+            <button class="dw-pill on" data-room="">All</button>
+            {% set seen = [] %}
+            {% for f in feed %}{% if f.room not in seen %}{% if seen.append(f.room) %}{% endif %}<button class="dw-pill" data-room="{{ f.room }}">{{ f.room_label }}</button>{% endif %}{% endfor %}
+          </div>
+        </div>
+        {% if feed %}
+        <div class="dw-feed" id="dwFeed">
+          {% for f in feed %}
+          <article class="dw-card dw-post" data-room="{{ f.room }}">
+            <div class="dw-post-head">
+              <a class="dw-av dw-av-{{ (f.author_id or 0) % 3 }}" href="{{ url_for('social.profile', user_id=f.author_id) if f.author_id else '#' }}">
+                {% if f.has_avatar %}<img src="{{ url_for('social.avatar', user_id=f.author_id) }}" alt="" />{% else %}{{ f.initials }}{% endif %}
+              </a>
+              <div class="dw-post-meta"><b>{{ f.author }}</b><small>{{ f.room_label }} · {{ f.ago }}</small></div>
+              <span class="dw-tag {{ 'arrived' if f.tag == 'Arrived' else 'asking' }}">{{ f.tag }}</span>
+            </div>
+            <div class="dw-post-body">{{ f.body }}</div>
+            <div class="dw-post-foot">
+              <span class="dw-replies"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> {{ f.replies }} {{ 'reply' if f.replies == 1 else 'replies' }}</span>
+              <a href="{{ url_for('community.community_room', room=f.room, post=f.id) }}">Read the thread →</a>
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="dw-card" style="text-align:center;padding:34px;color:#6b8078;">
+          <p style="margin:0 0 14px;">No community activity yet.</p>
+          <a class="dw-btn-sm" href="{{ url_for('social.communities') }}">Explore communities</a>
+        </div>
+        {% endif %}
+      </section>
+    </div>
+
+    <!-- Rail -->
+    <aside class="dw-rail">
+      {% if remaining %}
+      <section class="dw-dark">
+        <div class="dw-dark-head"><h2>{{ remaining|length }} step{{ '' if remaining|length == 1 else 's' }} left</h2><span>{{ completeness }}%</span></div>
+        <div class="dw-track"><div class="dw-fill" style="width:{{ completeness }}%;"></div></div>
+        <p>Members with a complete profile get four times as many messages.</p>
+        {% for s in remaining %}
+        <a class="dw-task" href="{{ s.href }}">{{ s.label }} <span>→</span></a>
+        {% endfor %}
+      </section>
+      {% endif %}
+
+      {% if sug_comms %}
+      <section class="dw-card">
+        <div class="dw-card-head"><h2>Communities for you</h2><a href="{{ url_for('social.communities') }}">All</a></div>
+        {% for c in sug_comms %}
+        <div class="dw-crow">
+          <a class="dw-code" href="{{ url_for('community.community_room', room=c.key) }}">{{ c.code }}</a>
+          <div class="dw-crow-txt"><b>{{ c.label }}</b><small>{{ c.members }} member{{ '' if c.members == 1 else 's' }} · {{ c.posts }} post{{ '' if c.posts == 1 else 's' }}</small></div>
+          <button class="dw-btn-join" data-room="{{ c.key }}">Join</button>
+        </div>
+        {% endfor %}
+      </section>
+      {% endif %}
+    </aside>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+(function () {
+  var pills = document.querySelectorAll('#dwFilters .dw-pill');
+  var feed = document.getElementById('dwFeed');
+  pills.forEach(function (p) {
+    p.addEventListener('click', function () {
+      pills.forEach(function (x) { x.classList.remove('on'); });
+      p.classList.add('on');
+      var room = p.getAttribute('data-room'); if (!feed) return;
+      feed.querySelectorAll('.dw-post').forEach(function (c) {
+        c.style.display = (!room || c.getAttribute('data-room') === room) ? '' : 'none';
+      });
+    });
+  });
+})();
+document.querySelectorAll('.dw-btn-join').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var room = btn.getAttribute('data-room'); btn.disabled = true;
+    fetch('/api/community/' + room + '/membership', { method: 'POST' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        btn.disabled = false;
+        if (d.ok && d.joined) { btn.textContent = 'Joined ✓'; btn.classList.add('joined'); if (window.tgmToast) window.tgmToast('Joined ' + room.toUpperCase()); }
+      }).catch(function () { btn.disabled = false; });
+  });
+});
+</script>
+{% endblock %}

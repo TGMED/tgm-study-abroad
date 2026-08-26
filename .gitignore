@@ -16,6 +16,7 @@ app/data/leads.db
 app/data/*.db
 app/data/.flask_secret_key
 app/data/.admin_password
+app/data/uploads/
 
 # Logs & scratch
 *.log

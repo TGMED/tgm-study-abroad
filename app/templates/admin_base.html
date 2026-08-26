@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>{% block title %}TGM Admin{% endblock %}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}" />
+</head>
+<body>
+{% set ep = request.endpoint or '' %}
+<header class="a-top">
+  <a class="a-brand" href="{{ url_for('admin.admin_members') }}">TGM <span>Admin</span></a>
+  <nav class="a-nav">
+    <a class="{{ 'on' if ep in ('admin.admin_members','admin.admin_member') }}" href="{{ url_for('admin.admin_members') }}">Members</a>
+    <a class="{{ 'on' if ep == 'admin.admin_community' }}" href="{{ url_for('admin.admin_community') }}">Moderation{% if open_reports %} <em>{{ open_reports }}</em>{% endif %}</a>
+    <a class="{{ 'on' if ep == 'admin.admin_leads' }}" href="{{ url_for('admin.admin_leads') }}">Leads</a>
+  </nav>
+  <a class="a-site" href="{{ url_for('roi.home') }}">View site →</a>
+</header>
+<main class="a-main">
+  {% block admin_content %}{% endblock %}
+</main>
+</body>
+</html>

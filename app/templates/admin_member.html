@@ -1,0 +1,75 @@
+{% extends "admin_base.html" %}
+{% block title %}{{ m.name }} — TGM Admin{% endblock %}
+{% block admin_content %}
+<a class="back" href="{{ url_for('admin.admin_members') }}">← All members</a>
+
+<div class="card" style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;">
+  <span class="av" style="width:64px;height:64px;font-size:22px;">{% if m.has_avatar %}<img src="{{ url_for('social.avatar', user_id=m.id) }}" alt="" />{% else %}{{ m.initials }}{% endif %}</span>
+  <div style="flex:1;min-width:200px;">
+    <h1 style="font-family:var(--fh);font-weight:900;font-size:24px;margin:0;">{{ m.name }}</h1>
+    <div style="color:var(--mut);font-size:13.5px;margin-top:4px;display:flex;gap:12px;flex-wrap:wrap;">
+      <span>{{ m.email }}</span>
+      <span class="badge {{ m.user_type }}">{{ 'Already abroad' if m.user_type == 'abroad' else 'Planning to go' }}</span>
+      {% if m.is_banned %}<span class="badge frozen">Frozen</span>{% else %}<span class="badge active">Active</span>{% endif %}
+    </div>
+    <div style="color:var(--faint);font-size:12.5px;margin-top:6px;">
+      {% if m.location %}📍 {{ m.location }} {% endif %}{% if m.destination %}✈ {{ m.destination }} {% endif %}· Joined {{ m.created }} · Last seen {{ m.last_seen }}
+    </div>
+  </div>
+  <div class="row-actions">
+    <form class="inline" method="post" action="{{ url_for('admin.freeze_member', sid=m.id) }}">
+      <button class="btn {{ 'btn-green' if m.is_banned else 'btn-warn' }}" type="submit">{{ 'Unfreeze account' if m.is_banned else 'Freeze account' }}</button>
+    </form>
+    <form class="inline" method="post" action="{{ url_for('admin.delete_member', sid=m.id) }}" onsubmit="return confirm('Permanently delete {{ m.name }} and all their posts? This cannot be undone.');">
+      <button class="btn btn-danger solid" type="submit">Delete account</button>
+    </form>
+  </div>
+</div>
+
+<div class="stats" style="margin-top:18px;">
+  <div class="stat"><b>{{ stats.posts }}</b><small>Posts</small></div>
+  <div class="stat"><b>{{ stats.comments }}</b><small>Comments</small></div>
+  <div class="stat"><b>{{ stats.votes }}</b><small>Votes received</small></div>
+  <div class="stat"><b>{{ stats.amara }}</b><small>@amara mentions</small></div>
+  <div class="stat {{ 'danger' if stats.reports }}"><b>{{ stats.reports }}</b><small>Reports against</small></div>
+</div>
+
+<div class="card">
+  <h2>Most active in</h2>
+  {% if channels %}
+  <div class="bars">
+    {% for c in channels %}
+    <div class="bar-row">
+      <div># {{ c.label }}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:{{ c.pct }}%;"></div></div>
+      <div class="n">{{ c.count }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}<p class="empty" style="padding:14px;">No activity in any channel yet.</p>{% endif %}
+</div>
+
+<div class="card">
+  <h2>Recent activity ({{ activity|length }})</h2>
+  {% if activity %}
+  <div class="act">
+    {% for a in activity %}
+    <div class="act-item">
+      <div class="act-body">
+        <div class="act-meta">
+          <span class="badge {{ 'comment' if a.is_comment else 'post' }}">{{ 'Comment' if a.is_comment else 'Post' }}</span>
+          <span># {{ a.room_label }}</span><span>· {{ a.ago }}</span>
+          {% if a.is_hidden %}<span class="badge hidden">Hidden</span>{% endif %}
+        </div>
+        <div class="act-text {{ 'hidden' if a.is_hidden }}">{{ a.content }}</div>
+      </div>
+      <form class="inline" method="post" action="{{ url_for('admin.delete_post', pid=a.id) }}" onsubmit="return confirm('Delete this {{ 'comment' if a.is_comment else 'post' }}? This cannot be undone.');">
+        <input type="hidden" name="next" value="{{ url_for('admin.admin_member', sid=m.id) }}" />
+        <button class="btn btn-sm btn-danger" type="submit">Delete {{ 'comment' if a.is_comment else 'post' }}</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}<p class="empty" style="padding:14px;">No posts or comments yet.</p>{% endif %}
+</div>
+{% endblock %}

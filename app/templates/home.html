@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Study Abroad, Smarter — TGM{% endblock %}
+{% block title %}Move Abroad, Together — TGM Community{% endblock %}
 {% block body_class %}home{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}" />
@@ -16,48 +16,54 @@
 
   <div class="lp-hero-grid">
     <div class="lp-hero-copy reveal">
-      <span class="lp-pill"><span class="lp-dot"></span> Trusted by 5,000+ Nigerian students</span>
-      <h1 class="lp-title">Study abroad,<br/><span class="lp-underline">without the guesswork.</span></h1>
-      <p class="lp-lead">See what an international qualification is really worth for <em>you</em> — after rent, tax and cost of living — then get matched to real programmes and a community that's been exactly where you are.</p>
+      <span class="lp-pill">A global community of movers &amp; dreamers</span>
+      <h1 class="lp-title">Move abroad, guided by<br/><span class="lp-underline">people who've been there.</span></h1>
+      <p class="lp-lead">TGM connects people who've already made the move with those who dream of it. Ask real questions, get honest answers, and get <em>referred</em> to the people and opportunities that can take you there.</p>
       <div class="lp-cta-row">
-        <a class="btn btn-primary" href="{{ url_for('roi.index') }}">Calculate my ROI <span class="arw">→</span></a>
-        <a class="btn btn-ghost" href="{{ url_for('chat.chat_page') }}">Chat with Amara</a>
+        <a class="btn btn-primary" href="{{ url_for('social.communities') }}">Join the community <span class="arw">→</span></a>
+        <a class="btn btn-ghost" href="{{ url_for('roi.index') }}">Explore the ROI tool</a>
       </div>
       <div class="lp-social">
         <div class="lp-stack" aria-hidden="true">
-          <span class="mini">👩🏽‍🎓</span><span class="mini">👨🏾‍💻</span><span class="mini">👩🏾‍🔬</span><span class="mini">🧑🏽‍🏫</span>
+          <span class="mini av-g">TA</span><span class="mini av-t">JO</span><span class="mini av-s">MI</span><span class="mini av-m">SE</span>
         </div>
-        <div class="lp-social-text"><b>4.9/5</b> ★★★★★<br/><span>from students now studying in 5 countries</span></div>
+        <div class="lp-social-text"><b>4.9/5</b> ★★★★★<br/><span>from members now living in 20+ countries</span></div>
       </div>
     </div>
 
-    <!-- Floating people connecting + asking questions -->
+    <!-- Floating members connecting, offering help, and referring -->
     <div class="lp-hero-visual" aria-hidden="true">
       <div class="globe">
         <span class="globe-ring r1"></span>
         <span class="globe-ring r2"></span>
-        <span class="globe-core">🌍</span>
+        <span class="globe-core">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M3 12h18"></path>
+            <path d="M12 3c2.5 2.6 3.9 5.7 3.9 9s-1.4 6.4-3.9 9c-2.5-2.6-3.9-5.7-3.9-9S9.5 5.6 12 3z"></path>
+          </svg>
+        </span>
       </div>
 
       <div class="person p1 float-a">
-        <span class="face">👩🏽‍🎓</span>
-        <div class="bubble">Which country is cheapest for a Master's?</div>
+        <span class="face av-g">TA</span>
+        <div class="bubble">Anyone studying in the UK right now?</div>
       </div>
       <div class="person p2 float-b">
-        <span class="face">👨🏾‍💻</span>
-        <div class="bubble">Do I qualify with a 2:2?</div>
+        <span class="face av-t">JO</span>
+        <div class="bubble">I'm in Toronto — happy to help.</div>
       </div>
       <div class="person p3 float-c">
-        <span class="face">🧑🏽‍🏫</span>
-        <div class="bubble">Can I bring my family?</div>
+        <span class="face av-s">MI</span>
+        <div class="bubble">Could someone refer me to their uni?</div>
       </div>
       <div class="person p4 float-a">
-        <span class="face">👩🏾‍🔬</span>
-        <div class="bubble">How hard is the study visa?</div>
+        <span class="face av-m">SE</span>
+        <div class="bubble">How did you fund your move?</div>
       </div>
       <div class="person p5 float-b">
-        <span class="face">🧑🏾‍🎓</span>
-        <div class="bubble">Will it actually pay off?</div>
+        <span class="face av-d">AD</span>
+        <div class="bubble">Just landed in Dublin.</div>
       </div>
 
       <svg class="link-lines" viewBox="0 0 460 460" preserveAspectRatio="none">
@@ -72,37 +78,50 @@
 
 <!-- ===================== STATS ===================== -->
 <section class="lp-stats reveal">
-  <div class="stat"><div class="num" data-count="5000" data-suffix="+">0</div><div class="lbl">Students guided</div></div>
-  <div class="stat"><div class="num" data-count="12" data-suffix="">0</div><div class="lbl">Partner universities</div></div>
-  <div class="stat"><div class="num" data-count="5" data-suffix="">0</div><div class="lbl">Study destinations</div></div>
-  <div class="stat"><div class="num" data-count="60" data-suffix="s">0</div><div class="lbl">To your ROI score</div></div>
+  <div class="stat"><div class="num" data-count="5000" data-suffix="+">0</div><div class="lbl">Members worldwide</div></div>
+  <div class="stat"><div class="num" data-count="25" data-suffix="">0</div><div class="lbl">Countries represented</div></div>
+  <div class="stat"><div class="num" data-count="1200" data-suffix="+">0</div><div class="lbl">Referrals made</div></div>
+  <div class="stat"><div class="num" data-count="24" data-suffix="/7">0</div><div class="lbl">Community support</div></div>
 </section>
 
 <!-- ===================== HOW IT WORKS ===================== -->
 <section class="lp-section" id="how">
   <div class="lp-head reveal">
     <span class="lp-eyebrow">How it works</span>
-    <h2>Clarity in three simple steps</h2>
-    <p>No spreadsheets, no agents pushing you. Just a clear, personal picture of your best move.</p>
+    <h2>From dreaming to boarding — together</h2>
+    <p>No agents, no gatekeepers. Just real people who've walked the path, plus the tools to plan your move.</p>
   </div>
   <div class="lp-steps">
     <article class="step-card reveal">
-      <div class="step-ico">🧮</div>
+      <div class="step-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle>
+          <path d="M19 8v6"></path><path d="M22 11h-6"></path>
+        </svg>
+      </div>
       <span class="step-no">01</span>
-      <h3>Tell us your reality</h3>
-      <p>Your profession, your pay, your city. Thirty seconds — no sign-up needed to start.</p>
+      <h3>Join &amp; share your goal</h3>
+      <p>Tell the community where you are and where you want to go. One step, no forms, free to start.</p>
     </article>
     <article class="step-card reveal" style="--d:.08s">
-      <div class="step-ico">📈</div>
+      <div class="step-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+      </div>
       <span class="step-no">02</span>
-      <h3>See your true ROI</h3>
-      <p>A live, honest breakdown across five destinations — net of rent, tax and cost of living.</p>
+      <h3>Connect with people there</h3>
+      <p>Meet students, graduates and professionals already living in your destination — and ask them anything.</p>
     </article>
     <article class="step-card reveal" style="--d:.16s">
-      <div class="step-ico">🤝</div>
+      <div class="step-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 2 11 13"></path><path d="M22 2 15 22l-4-9-9-4 20-7z"></path>
+        </svg>
+      </div>
       <span class="step-no">03</span>
-      <h3>Get matched & supported</h3>
-      <p>Real programmes at partner universities, plus Amara and a student community in your corner.</p>
+      <h3>Get referred &amp; get moving</h3>
+      <p>Tap referrals, warm intros and honest guidance from people genuinely invested in your success.</p>
     </article>
   </div>
 </section>
@@ -110,39 +129,39 @@
 <!-- ===================== DESTINATIONS ===================== -->
 <section class="lp-section alt" id="destinations">
   <div class="lp-head reveal">
-    <span class="lp-eyebrow">Where you could go</span>
-    <h2>Five destinations, one honest comparison</h2>
-    <p>Each with its own pay, visa route and cost of living — weighed for your exact profile.</p>
+    <span class="lp-eyebrow">Where our members are</span>
+    <h2>A community spread across the globe</h2>
+    <p>Wherever you're headed, someone here has already been — and they're ready to help you get there.</p>
   </div>
   <div class="lp-dest-grid">
-    <div class="dest-card reveal"><span class="flag">GB</span><h4>United Kingdom</h4><p>2-year graduate visa · strong salary uplift</p></div>
-    <div class="dest-card reveal" style="--d:.05s"><span class="flag">CA</span><h4>Canada</h4><p>PGWP route · clear path to residency</p></div>
-    <div class="dest-card reveal" style="--d:.1s"><span class="flag">IE</span><h4>Ireland</h4><p>EU tech hub · English-taught programmes</p></div>
-    <div class="dest-card reveal" style="--d:.15s"><span class="flag">PL</span><h4>Poland</h4><p>Low cost of living · fast-growing economy</p></div>
-    <div class="dest-card reveal" style="--d:.2s"><span class="flag">EU</span><h4>Europe</h4><p>Affordable tuition · Schengen access</p></div>
+    <div class="dest-card reveal"><span class="flag">GB</span><h4>United Kingdom</h4><p>1,200+ members · grads &amp; professionals</p></div>
+    <div class="dest-card reveal" style="--d:.05s"><span class="flag">CA</span><h4>Canada</h4><p>Large student network · PGWP route</p></div>
+    <div class="dest-card reveal" style="--d:.1s"><span class="flag">IE</span><h4>Ireland</h4><p>Welcoming community · EU tech hub</p></div>
+    <div class="dest-card reveal" style="--d:.15s"><span class="flag">PL</span><h4>Poland</h4><p>Fast-growing base · affordable living</p></div>
+    <div class="dest-card reveal" style="--d:.2s"><span class="flag">EU</span><h4>Europe</h4><p>Members everywhere · Schengen access</p></div>
   </div>
 </section>
 
-<!-- ===================== COMMUNITY / AMARA ===================== -->
+<!-- ===================== CONNECT / REFER FEATURE ===================== -->
 <section class="lp-section" id="community">
   <div class="lp-feature">
     <div class="lp-feature-copy reveal">
       <span class="lp-eyebrow">You're not doing this alone</span>
-      <h2>Meet Amara &amp; a community that gets it</h2>
-      <p>Ask anything — visas, funding, homesickness, which city fits you — and get straight answers from an AI counsellor trained on real journeys, backed by students already living the dream.</p>
+      <h2>Connect, ask &amp; get referred</h2>
+      <p>Meet people who've made the exact move you're planning. Get straight answers, warm introductions and referrals — plus Amara, our AI counsellor, whenever you need instant guidance.</p>
       <ul class="lp-checks">
-        <li>Instant, judgement-free answers, 24/7</li>
-        <li>Live rooms with students in your destination</li>
-        <li>Guidance from qualification to touchdown</li>
+        <li>Real members already living your dream</li>
+        <li>Referrals &amp; intros from people who've been there</li>
+        <li>Amara, your 24/7 AI guide, on standby</li>
       </ul>
-      <a class="btn btn-primary" href="{{ url_for('chat.chat_page') }}">Start chatting <span class="arw">→</span></a>
+      <a class="btn btn-primary" href="{{ url_for('social.communities') }}">Join the community <span class="arw">→</span></a>
     </div>
     <div class="lp-feature-visual reveal">
       <div class="chat-mock">
-        <div class="chat-top"><span class="av">🧕🏽</span><div><b>Amara</b><span class="on">● online</span></div></div>
-        <div class="msg them">Hi! I have a 2:2 in Accounting — can I still study in the UK? 😊</div>
-        <div class="msg me">Absolutely. Several partner unis accept a 2:2 with relevant experience. Want me to show 3 that fit your budget?</div>
-        <div class="msg them">Yes please!</div>
+        <div class="chat-top"><span class="av av-t">KO</span><div><b>Kemi O.</b><span class="on">● in London · UK</span></div></div>
+        <div class="msg them">Saw you're headed to the UK for a Master's — I did the same last year.</div>
+        <div class="msg me">Yes! Any tips on funding and housing?</div>
+        <div class="msg them">Happy to share. I can also refer you to my university's admissions contact.</div>
         <div class="typing"><span></span><span></span><span></span></div>
       </div>
     </div>
@@ -152,21 +171,21 @@
 <!-- ===================== TESTIMONIALS ===================== -->
 <section class="lp-section alt" id="stories">
   <div class="lp-head reveal">
-    <span class="lp-eyebrow">Real students, real moves</span>
-    <h2>From "maybe someday" to boarding pass</h2>
+    <span class="lp-eyebrow">Real people, real moves</span>
+    <h2>Connections that changed everything</h2>
   </div>
   <div class="lp-quotes">
     <figure class="quote-card reveal">
-      <blockquote>"I thought abroad was out of reach. The ROI score showed me Poland made total sense — I start my Master's in January."</blockquote>
-      <figcaption><span class="qav">👩🏾‍🎓</span><span><b>Chidinma A.</b><small>Warsaw, Poland</small></span></figcaption>
+      <blockquote>"I found a member from my city already studying in Warsaw. She walked me through everything — I start my Master's in January."</blockquote>
+      <figcaption><span class="qav av-g">CA</span><span><b>Chidinma A.</b><small>Warsaw, Poland</small></span></figcaption>
     </figure>
     <figure class="quote-card reveal" style="--d:.08s">
-      <blockquote>"Amara answered questions I was too shy to ask an agent. Two months later I had my Canadian study permit."</blockquote>
-      <figcaption><span class="qav">👨🏾‍💻</span><span><b>Tobi E.</b><small>Toronto, Canada</small></span></figcaption>
+      <blockquote>"A member in Toronto referred me to his university's admissions team. Two months later I had my study permit."</blockquote>
+      <figcaption><span class="qav av-t">TE</span><span><b>Tobi E.</b><small>Toronto, Canada</small></span></figcaption>
     </figure>
     <figure class="quote-card reveal" style="--d:.16s">
-      <blockquote>"The honest cost-of-living breakdown saved me from a mistake. I picked Ireland and I've never looked back."</blockquote>
-      <figcaption><span class="qav">👩🏽‍🔬</span><span><b>Aisha M.</b><small>Dublin, Ireland</small></span></figcaption>
+      <blockquote>"This community felt like family before I even left home. I've since referred three friends of my own."</blockquote>
+      <figcaption><span class="qav av-s">AM</span><span><b>Aisha M.</b><small>Dublin, Ireland</small></span></figcaption>
     </figure>
   </div>
 </section>
@@ -174,16 +193,16 @@
 <!-- ===================== FINAL CTA ===================== -->
 <section class="lp-final reveal">
   <div class="lp-final-inner">
-    <h2>Your future is 60 seconds away.</h2>
-    <p>Find out what studying abroad is really worth for you — free, instant, no pressure.</p>
-    <a class="btn btn-light" href="{{ url_for('roi.index') }}">Get my ROI score <span class="arw">→</span></a>
+    <h2>Your people are already out there.</h2>
+    <p>Join a global community of movers and dreamers — connect, get referred, and make your move.</p>
+    <a class="btn btn-light" href="{{ url_for('social.communities') }}">Join the community <span class="arw">→</span></a>
   </div>
 </section>
 
 <footer class="lp-footer">
   <div class="lp-foot-brand">TGM</div>
-  <p>Global education. Smart investment.</p>
-  <p class="fine">© TGM · A study-abroad investment-planning tool, not financial or immigration advice.</p>
+  <p>Go further, together.</p>
+  <p class="fine">© TGM · A global community connecting people who've moved abroad with those who dream of it.</p>
 </footer>
 
 {% endblock %}

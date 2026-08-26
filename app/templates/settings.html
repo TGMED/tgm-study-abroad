@@ -1,0 +1,85 @@
+{% extends "app_base.html" %}
+{% from "_avatar.html" import avatar %}
+{% block title %}Settings — TGM{% endblock %}
+{% block page_title %}Settings{% endblock %}
+{% block back %}<a class="backbtn" href="{{ url_for('social.me') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>Back</a>{% endblock %}
+{% block app_content %}
+<div class="pagehead"><h1>Edit your profile</h1><p>Keep your details fresh so the right people can find and connect with you.</p></div>
+
+<form class="card form-card" method="POST" action="{{ url_for('social.settings') }}" enctype="multipart/form-data">
+  <div class="avatar-picker">
+    <label class="preview" id="avatarPreview" for="avatar" style="cursor:pointer;">
+      {% if prof.has_avatar %}<img src="{{ url_for('social.avatar', user_id=prof.id) }}" alt="" />{% else %}{{ prof.initials }}{% endif %}
+    </label>
+    <div>
+      <label style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#5B6B62;">Profile picture</label>
+      <input type="file" id="avatar" name="avatar" accept="image/*" style="margin-top:6px;font-size:13px;" />
+      <div style="font-size:12px;color:#7C8A80;margin-top:4px;">Click the circle to change · JPG/PNG/WEBP, up to 5&nbsp;MB</div>
+    </div>
+  </div>
+
+  <div class="form-row">
+    <div class="field"><label>Display name</label><input name="display_name" maxlength="40" value="{{ prof.name }}" /></div>
+    <div class="field"><label>Headline</label><input name="headline" maxlength="120" value="{{ prof.headline }}" placeholder="e.g. MSc Data Science hopeful" /></div>
+  </div>
+
+  <div class="field">
+    <label>I am…</label>
+    <div class="type-toggle">
+      <label><input type="radio" name="user_type" value="aspiring" {{ 'checked' if prof.user_type != 'abroad' }} /><span class="tt-emoji"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg></span><span><b>Planning to go abroad</b><small>Looking for guidance</small></span></label>
+      <label><input type="radio" name="user_type" value="abroad" {{ 'checked' if prof.user_type == 'abroad' }} /><span class="tt-emoji"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/></svg></span><span><b>Already abroad</b><small>Here to help & refer</small></span></label>
+    </div>
+  </div>
+
+  <div class="form-row">
+    <div class="field"><label>Location now</label><input name="location" value="{{ prof.location }}" placeholder="e.g. Lagos, Nigeria" /></div>
+    <div class="field"><label>Destination</label><input name="destination" value="{{ prof.destination }}" placeholder="e.g. Canada" /></div>
+  </div>
+
+  <div class="field"><label>About you</label><textarea name="bio" maxlength="600" placeholder="A few lines about your journey…">{{ prof.bio }}</textarea></div>
+
+  <div class="field">
+    <label>Study history</label>
+    <div class="hist-rows" id="studyRows">
+      {% for s in prof.study_history %}
+      <div class="hist-row"><input name="study_title" value="{{ s.title }}" placeholder="Course / degree" /><input name="study_org" value="{{ s.org }}" placeholder="Institution" /><input name="study_years" value="{{ s.years }}" placeholder="Years" /><button type="button" class="rm">×</button></div>
+      {% endfor %}
+    </div>
+    <button type="button" class="addrow" data-target="studyRows" data-prefix="study">+ Add study</button>
+  </div>
+
+  <div class="field">
+    <label>Work history</label>
+    <div class="hist-rows" id="workRows">
+      {% for w in prof.work_history %}
+      <div class="hist-row"><input name="work_title" value="{{ w.title }}" placeholder="Role" /><input name="work_org" value="{{ w.org }}" placeholder="Company" /><input name="work_years" value="{{ w.years }}" placeholder="Years" /><button type="button" class="rm">×</button></div>
+      {% endfor %}
+    </div>
+    <button type="button" class="addrow" data-target="workRows" data-prefix="work">+ Add role</button>
+  </div>
+
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">Save changes</button>
+    <a class="btn btn-ghost" href="{{ url_for('social.me') }}">View profile</a>
+  </div>
+</form>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+  var input = document.getElementById('avatar'), prev = document.getElementById('avatarPreview');
+  input.addEventListener('change', function () {
+    var f = input.files && input.files[0]; if (!f) return;
+    prev.innerHTML = '<img src="' + URL.createObjectURL(f) + '" alt="" />';
+  });
+  function rowHtml(p){return '<div class="hist-row"><input name="'+p+'_title" placeholder="'+(p==='study'?'Course / degree':'Role')+'" /><input name="'+p+'_org" placeholder="'+(p==='study'?'Institution':'Company')+'" /><input name="'+p+'_years" placeholder="Years" /><button type="button" class="rm">×</button></div>';}
+  document.querySelectorAll('.addrow').forEach(function(b){
+    b.addEventListener('click', function(){
+      var box = document.getElementById(b.getAttribute('data-target'));
+      box.insertAdjacentHTML('beforeend', rowHtml(b.getAttribute('data-prefix')));
+    });
+  });
+  document.addEventListener('click', function(e){
+    if(e.target.classList.contains('rm')) e.target.closest('.hist-row').remove();
+  });
+</script>
+{% endblock %}

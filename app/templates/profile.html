@@ -1,0 +1,57 @@
+{% extends "app_base.html" %}
+{% from "_avatar.html" import avatar %}
+{% block title %}{{ prof.name }} — TGM{% endblock %}
+{% block page_title %}Profile{% endblock %}
+{% block back %}<a class="backbtn" href="{{ url_for('social.communities') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>Back</a>{% endblock %}
+{% block app_content %}
+<div class="card profile-hero">
+  <div class="profile-cover"></div>
+  <div class="profile-body">
+    {{ avatar(prof, 92) }}
+    <div class="profile-name">
+      <div>
+        <h1>{{ prof.name }}</h1>
+        <div class="meta">
+          <span class="type-badge {{ prof.user_type }}">{{ 'Already abroad' if prof.user_type == 'abroad' else 'Planning to go' }}</span>
+          {% if prof.location %}<span>📍 {{ prof.location }}</span>{% endif %}
+          {% if prof.destination %}<span>✈ {{ prof.destination }}</span>{% endif %}
+        </div>
+      </div>
+      <div class="profile-actions">
+        {% if is_me %}
+        <a class="btn btn-ghost" href="{{ url_for('social.settings') }}">Edit profile</a>
+        {% endif %}
+      </div>
+    </div>
+    {% if prof.headline %}<p class="profile-headline">{{ prof.headline }}</p>{% endif %}
+    {% if prof.bio %}<p class="profile-headline" style="color:var(--muted);">{{ prof.bio }}</p>{% endif %}
+    {% if joined_rooms %}
+    <div class="profile-tags">
+      {% for r in joined_rooms %}<span class="tag">{{ r }} community</span>{% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card form-card timeline-section" style="max-width:none;">
+  <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/></svg> Study history</h2>
+  {% if prof.study_history %}
+  <ul class="timeline">
+    {% for s in prof.study_history %}
+    <li><span class="dot"></span><div><div class="t-title">{{ s.title }}</div><div class="t-org">{{ s.org }}</div><div class="t-years">{{ s.years }}</div></div></li>
+    {% endfor %}
+  </ul>
+  {% else %}<p class="rc-blurb">{% if is_me %}Add your studies from <a href="{{ url_for('social.settings') }}" style="color:var(--g-700);">Settings</a>.{% else %}Nothing added yet.{% endif %}</p>{% endif %}
+</div>
+
+<div class="card form-card timeline-section" style="max-width:none;margin-top:18px;">
+  <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Work history</h2>
+  {% if prof.work_history %}
+  <ul class="timeline">
+    {% for w in prof.work_history %}
+    <li><span class="dot"></span><div><div class="t-title">{{ w.title }}</div><div class="t-org">{{ w.org }}</div><div class="t-years">{{ w.years }}</div></div></li>
+    {% endfor %}
+  </ul>
+  {% else %}<p class="rc-blurb">{% if is_me %}Add your experience from <a href="{{ url_for('social.settings') }}" style="color:var(--g-700);">Settings</a>.{% else %}Nothing added yet.{% endif %}</p>{% endif %}
+</div>
+{% endblock %}

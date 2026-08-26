@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Set up your profile — TGM Community</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/social.css') }}" />
+<style>
+  .ob-wrap{min-height:100vh;display:grid;place-items:center;padding:30px 18px;
+    background:radial-gradient(120% 80% at 100% -10%,#DFF6E8,transparent 55%),linear-gradient(180deg,#F6FBF7,#fff);}
+  .ob-card{width:100%;max-width:560px;}
+  .ob-head{text-align:center;margin-bottom:22px;}
+  .ob-head .step{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--g-600,#149A5E);}
+  .ob-head h1{font-family:var(--fh,'Fraunces Display',serif);font-weight:900;font-size:30px;margin:8px 0 6px;color:#0E2A1E;}
+  .ob-head p{color:#5B6B62;margin:0;font-size:15px;}
+</style>
+</head>
+<body class="app">
+<div class="ob-wrap">
+  <div class="ob-card">
+    <div class="ob-head">
+      <div class="step">Welcome{% if me %}, {{ me.name }}{% endif %}</div>
+      <h1>Set up your profile</h1>
+      <p>A photo and a few details help members connect with you — and help you find the right people.</p>
+    </div>
+
+    <form class="card form-card" method="POST" action="{{ url_for('social.onboarding') }}" enctype="multipart/form-data">
+      {% if error %}<p class="reply-context" style="color:#c0392b;font-weight:600;">{{ error }}</p>{% endif %}
+
+      <div class="avatar-picker">
+        <label class="preview" id="avatarPreview" for="avatar" style="cursor:pointer;">{{ me.initials if me else 'TGM' }}</label>
+        <div>
+          <label style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#5B6B62;">Profile picture <span style="color:#c0392b;">*</span></label>
+          <input type="file" id="avatar" name="avatar" accept="image/*" required style="margin-top:6px;font-size:13px;" />
+          <div style="font-size:12px;color:#7C8A80;margin-top:4px;">JPG / PNG / WEBP · up to 5&nbsp;MB</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>I am…</label>
+        <div class="type-toggle">
+          <label>
+            <input type="radio" name="user_type" value="aspiring" {{ 'checked' if (form.get('user_type') or 'aspiring') == 'aspiring' }} />
+            <span class="tt-emoji"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg></span>
+            <span><b>Planning to go abroad</b><small>Looking for guidance & connections</small></span>
+          </label>
+          <label>
+            <input type="radio" name="user_type" value="abroad" {{ 'checked' if form.get('user_type') == 'abroad' }} />
+            <span class="tt-emoji"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.9 5.7 3.9 9s-1.4 6.4-3.9 9c-2.5-2.6-3.9-5.7-3.9-9S9.5 5.6 12 3z"/></svg></span>
+            <span><b>Already abroad</b><small>Here to help & refer others</small></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="field">
+          <label>Where you are now</label>
+          <input name="location" value="{{ form.get('location','') }}" placeholder="e.g. Lagos, Nigeria" />
+        </div>
+        <div class="field">
+          <label>Destination (where you are / want to be)</label>
+          <input name="destination" value="{{ form.get('destination','') }}" placeholder="e.g. United Kingdom" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Headline</label>
+        <input name="headline" maxlength="120" value="{{ form.get('headline','') }}" placeholder="e.g. MSc Data Science hopeful · Accountant" />
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit" style="flex:1;justify-content:center;">Enter the community →</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  var input = document.getElementById('avatar');
+  var prev = document.getElementById('avatarPreview');
+  input.addEventListener('change', function () {
+    var f = input.files && input.files[0];
+    if (!f) return;
+    var url = URL.createObjectURL(f);
+    prev.innerHTML = '<img src="' + url + '" alt="preview" />';
+  });
+</script>
+</body>
+</html>
