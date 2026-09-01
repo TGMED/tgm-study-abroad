@@ -54,22 +54,17 @@ def _post_dict(row):
     }
 
 
-# A post row joined with its author's avatar, so the feed can show faces.
-_POST_JOIN = (
-    "SELECT p.*, s.avatar_path AS author_avatar "
-    "FROM community_posts p LEFT JOIN students s ON s.id = p.student_id"
-)
-
-
-# Every post row is fetched with its vote tally, the current student's own
-# vote, and (for top-level posts) a reply count -- so the UI can render the
-# vote rail and comment count without extra round-trips.
+# Every post row is fetched with its author's avatar, vote tally, the
+# current student's own vote, and (for top-level posts) a reply count -- so
+# the UI can render the vote rail and comment count without extra
+# round-trips. First `?` (student_id) must always be the first bound param.
 _POST_SELECT = """
-    SELECT p.*,
+    SELECT p.*, s.avatar_path AS author_avatar,
         COALESCE((SELECT SUM(value) FROM community_votes v WHERE v.post_id = p.id), 0) AS score,
         COALESCE((SELECT value FROM community_votes v WHERE v.post_id = p.id AND v.student_id = ?), 0) AS my_vote,
         (SELECT COUNT(*) FROM community_posts c WHERE c.parent_id = p.id AND c.is_hidden = 0) AS reply_count
     FROM community_posts p
+    LEFT JOIN students s ON s.id = p.student_id
 """
 
 SORTS = ("hot", "new", "top")
@@ -102,16 +97,17 @@ def community_room(room):
     if me is not None and not me["onboarded"]:
         return redirect(url_for("social.onboarding"))
 
+    student_id = session["student_id"]
     top_posts = db.execute(
-        _POST_JOIN + " WHERE p.room = ? AND p.parent_id IS NULL AND p.is_hidden = 0 ORDER BY p.id DESC LIMIT 50",
-        (room,),
+        _POST_SELECT + " WHERE p.room = ? AND p.parent_id IS NULL AND p.is_hidden = 0 ORDER BY p.id DESC LIMIT 50",
+        (student_id, room),
     ).fetchall()
 
     thread = []
     for post in reversed(top_posts):
         replies = db.execute(
-            _POST_JOIN + " WHERE p.parent_id = ? AND p.is_hidden = 0 ORDER BY p.id ASC",
-            (post["id"],),
+            _POST_SELECT + " WHERE p.parent_id = ? AND p.is_hidden = 0 ORDER BY p.id ASC",
+            (student_id, post["id"]),
         ).fetchall()
         thread.append({"post": _post_dict(post), "replies": [_post_dict(r) for r in replies]})
 
@@ -139,8 +135,8 @@ def api_list_posts(room):
     since = request.args.get("since", type=int, default=0)
     db = get_db()
     rows = db.execute(
-        _POST_JOIN + " WHERE p.room = ? AND p.id > ? AND p.is_hidden = 0 ORDER BY p.id ASC",
-        (room, since),
+        _POST_SELECT + " WHERE p.room = ? AND p.id > ? AND p.is_hidden = 0 ORDER BY p.id ASC",
+        (session["student_id"], room, since),
     ).fetchall()
     return jsonify({"ok": True, "posts": [_post_dict(r) for r in rows]})
 
@@ -182,7 +178,7 @@ def api_create_post(room):
     if MENTION_RE.search(content):
         ai_reply_row = _generate_ai_reply(db, room, thread_root_id=parent_id or post_id)
 
-    post_row = db.execute(_POST_JOIN + " WHERE p.id = ?", (post_id,)).fetchone()
+    post_row = db.execute(_POST_SELECT + " WHERE p.id = ?", (student_id, post_id)).fetchone()
     return jsonify({
         "ok": True,
         "post": _post_dict(post_row),
@@ -190,12 +186,68 @@ def api_create_post(room):
     })
 
 
+@community_bp.route("/api/community/posts/<int:post_id>/vote", methods=["POST"])
+@login_required
+def vote_post(post_id):
+    db = get_db()
+    student_id = session["student_id"]
+
+    student = db.execute("SELECT is_banned FROM students WHERE id = ?", (student_id,)).fetchone()
+    if student and student["is_banned"]:
+        return jsonify({"ok": False, "error": "Your account is restricted from voting."}), 403
+
+    post = db.execute(
+        "SELECT id, student_id FROM community_posts WHERE id = ? AND is_hidden = 0", (post_id,)
+    ).fetchone()
+    if not post:
+        return jsonify({"ok": False, "error": "Post not found."}), 404
+    if post["student_id"] == student_id:
+        return jsonify({"ok": False, "error": "You can't upvote your own post."}), 400
+
+    payload = request.get_json(silent=True) or {}
+    # Upvote-only toggle (not full +/- voting) -- keeps this a "mark helpful"
+    # signal rather than opening the door to downvote pile-ons in a support
+    # community.
+    value = 1 if payload.get("value") else 0
+
+    existing = db.execute(
+        "SELECT value FROM community_votes WHERE post_id = ? AND student_id = ?", (post_id, student_id)
+    ).fetchone()
+    now = datetime.datetime.utcnow().isoformat()
+    if value == 0:
+        db.execute("DELETE FROM community_votes WHERE post_id = ? AND student_id = ?", (post_id, student_id))
+    elif existing:
+        db.execute(
+            "UPDATE community_votes SET value = ?, created_at = ? WHERE post_id = ? AND student_id = ?",
+            (value, now, post_id, student_id),
+        )
+    else:
+        db.execute(
+            "INSERT INTO community_votes (post_id, student_id, value, created_at) VALUES (?, ?, ?, ?)",
+            (post_id, student_id, value, now),
+        )
+    db.commit()
+
+    score = db.execute(
+        "SELECT COALESCE(SUM(value), 0) AS s FROM community_votes WHERE post_id = ?", (post_id,)
+    ).fetchone()["s"]
+    return jsonify({"ok": True, "score": score, "my_vote": value})
+
+
 def _generate_ai_reply(db, room, thread_root_id):
+    # Take the most recent 10 posts in this thread, not the oldest 10 --
+    # otherwise a thread that's grown past 10 posts would hand Amara a
+    # stale window that excludes recent messages (possibly including the
+    # very message that just @mentioned her). Still handed to her oldest-
+    # first so the conversation reads in order.
     context_rows = db.execute(
         """
-        SELECT * FROM community_posts
-        WHERE (id = ? OR parent_id = ?) AND is_hidden = 0
-        ORDER BY id ASC LIMIT 10
+        SELECT * FROM (
+            SELECT * FROM community_posts
+            WHERE (id = ? OR parent_id = ?) AND is_hidden = 0
+            ORDER BY id DESC LIMIT 10
+        ) recent
+        ORDER BY id ASC
         """,
         (thread_root_id, thread_root_id),
     ).fetchall()
@@ -219,7 +271,10 @@ def _generate_ai_reply(db, room, thread_root_id):
         (room, thread_root_id, reply_text, now),
     )
     db.commit()
-    return db.execute(_POST_JOIN + " WHERE p.id = ?", (cur.lastrowid,)).fetchone()
+    # my_vote is always 0 for a post nobody has voted on yet, but _POST_SELECT
+    # still needs a bound value for that placeholder regardless of whose
+    # perspective this is fetched from.
+    return db.execute(_POST_SELECT + " WHERE p.id = ?", (0, cur.lastrowid)).fetchone()
 
 
 @community_bp.route("/api/community/posts/<int:post_id>/report", methods=["POST"])

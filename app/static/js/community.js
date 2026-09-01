@@ -10,6 +10,7 @@
   var STAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:60%;height:60%;"><path d="M12 3l2.1 4.7L19 9l-3.6 3.3.9 4.9L12 15l-4.3 2.2.9-4.9L5 9l4.9-1.3z"/></svg>';
   function toast(m, ok) { if (window.tgmToast) window.tgmToast(m, ok); else if (ok === false) alert(m); }
   var SHARE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>';
+  var VOTE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
 
   // ---------- relative time ----------
   function relativeTime(iso) {
@@ -78,7 +79,14 @@
     card.appendChild(head);
 
     var content = document.createElement('div'); content.className = 'post-content';
-    content.textContent = post.content; card.appendChild(content);
+    content.innerHTML = renderChatMarkdown(post.content); card.appendChild(content);
+
+    var vote = document.createElement('button');
+    vote.className = 'post-vote' + (post.my_vote ? ' voted' : '');
+    vote.setAttribute('data-post-id', post.id);
+    if (post.mine) { vote.disabled = true; vote.title = "You can't upvote your own post"; }
+    vote.innerHTML = VOTE_ICON + '<span class="pv-count">' + (post.score || 0) + '</span>';
+    card.appendChild(vote);
 
     if (!isReply) {
       var replies = document.createElement('div'); replies.className = 'post-replies';
@@ -133,6 +141,24 @@
         addPostToDom(r.d.post);
         if (r.d.ai_reply) addPostToDom(r.d.ai_reply);
         toast('Posted');
+      }).catch(function () { btn.disabled = false; toast('Could not reach the server — try again.', false); });
+  }
+
+  // ---------- voting ----------
+  function castVote(btn) {
+    if (btn.disabled) return;
+    var postId = btn.getAttribute('data-post-id');
+    var nextValue = btn.classList.contains('voted') ? 0 : 1;
+    btn.disabled = true;
+    fetch('/api/community/posts/' + postId + '/vote', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value: nextValue })
+    }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (r) {
+        btn.disabled = false;
+        if (!r.ok) { toast((r.d && r.d.error) || 'Could not vote.', false); return; }
+        btn.classList.toggle('voted', !!r.d.my_vote);
+        btn.querySelector('.pv-count').textContent = r.d.score;
       }).catch(function () { btn.disabled = false; toast('Could not reach the server — try again.', false); });
   }
 
@@ -229,6 +255,8 @@
   threadList.addEventListener('click', function (e) {
     var share = e.target.closest('.post-share');
     if (share) { openShare(share.getAttribute('data-post-id')); return; }
+    var vote = e.target.closest('.post-vote');
+    if (vote) { castVote(vote); return; }
     if (e.target.classList.contains('post-reply-btn')) setReplyTarget(e.target.getAttribute('data-post-id'));
     else if (e.target.classList.contains('post-report')) reportPost(e.target.getAttribute('data-post-id'));
   });

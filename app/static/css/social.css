@@ -338,6 +338,23 @@ body.dash-standalone{background:#f1f7f3;min-height:100vh;}
 .room-card .rc-actions .btn{flex:1;justify-content:center;}
 .joinbtn.joined{background:var(--g-100);color:var(--g-700);border:1px solid var(--g-200);}
 
+/* ---------- Leaderboard ---------- */
+.lb-card{padding:6px 10px;}
+.lb-list{list-style:none;margin:0;padding:0;}
+.lb-row{display:flex;align-items:center;gap:14px;padding:14px 10px;border-bottom:1px solid var(--line);}
+.lb-row:last-child{border-bottom:none;}
+.lb-rank{width:28px;flex:none;text-align:center;font-family:var(--fh);font-weight:900;font-size:16px;color:var(--muted);}
+.lb-top .lb-rank{font-size:19px;}
+.lb-rank-1{color:#C9971C;}
+.lb-rank-2{color:#8A96A3;}
+.lb-rank-3{color:#B0672C;}
+.lb-user{display:flex;align-items:center;gap:10px;flex:1;min-width:0;color:inherit;text-decoration:none;}
+.lb-name{font-weight:700;color:var(--ink);font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.lb-stat{flex:none;color:var(--muted);font-size:12.5px;}
+.lb-stat b{color:var(--ink-soft);}
+.lb-score{flex:none;font-weight:800;color:var(--g-700);font-size:14px;min-width:56px;text-align:right;}
+.lb-empty{color:var(--muted);padding:28px 22px;text-align:center;}
+
 /* ---------- People grid ---------- */
 .filters{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 20px;}
 .chip{padding:7px 14px;border-radius:999px;border:1px solid var(--line-2);background:#fff;color:var(--ink-soft);
@@ -471,6 +488,11 @@ body.dash-standalone{background:#f1f7f3;min-height:100vh;}
 .post-replies{margin-top:12px;padding-left:16px;border-left:2px solid var(--g-100);}
 .post-card.post-reply{margin:10px 0;padding:12px 14px;background:var(--g-50);border-color:transparent;}
 .post-reply-btn{margin-top:10px;background:none;border:none;color:var(--g-600);font-size:12.5px;font-weight:600;padding:0;}
+.post-vote{display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:none;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;}
+.post-vote svg{width:13px;height:13px;stroke:currentColor;}
+.post-vote:hover:not(:disabled){color:var(--g-600);border-color:var(--g-500);background:var(--g-100);}
+.post-vote.voted{color:var(--g-700);border-color:var(--g-500);background:var(--g-100);}
+.post-vote:disabled{opacity:.4;cursor:default;}
 .post-highlight{animation:pulseHi 2.4s ease;}
 @keyframes pulseHi{0%,20%{box-shadow:0 0 0 3px var(--g-400);}100%{box-shadow:var(--sh-sm);}}
 
@@ -542,6 +564,9 @@ body.dash-standalone{background:#f1f7f3;min-height:100vh;}
 .chat-bubble.chat-user{align-self:flex-end;background:linear-gradient(135deg,var(--g-500),var(--g-600));color:#fff;border-bottom-right-radius:5px;}
 .chat-bubble.chat-model{align-self:flex-start;background:#fff;border:1px solid var(--line);color:var(--ink-soft);border-bottom-left-radius:5px;box-shadow:var(--sh-sm);}
 .chat-bubble.chat-thinking{opacity:.7;font-style:italic;}
+.chat-bubble.chat-counsellor{align-self:flex-start;background:var(--g-50);border:1px solid var(--g-200);color:var(--ink-soft);border-bottom-left-radius:5px;box-shadow:var(--sh-sm);}
+.chat-bubble.chat-counsellor::before{content:"TGM Counsellor";display:block;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--g-600);margin-bottom:4px;}
+.chat-system{align-self:center;max-width:90%;padding:8px 16px;border-radius:999px;background:var(--g-100);color:var(--g-700);font-size:12.5px;font-weight:600;text-align:center;}
 .chat-retry-btn{margin-top:8px;padding:7px 14px;border-radius:9px;border:1px solid var(--line-2);background:#fff;color:var(--ink);font-size:12.5px;font-weight:600;}
 .chat-error{color:#c0392b;font-size:13px;padding:8px 20px;background:#fff;}
 .chat-composer{display:flex;gap:10px;padding:14px 18px;border-top:1px solid var(--line);background:#fff;}

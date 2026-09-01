@@ -30,9 +30,9 @@
       <div class="avatar-picker">
         <label class="preview" id="avatarPreview" for="avatar" style="cursor:pointer;">{{ me.initials if me else 'TGM' }}</label>
         <div>
-          <label style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#5B6B62;">Profile picture <span style="color:#c0392b;">*</span></label>
-          <input type="file" id="avatar" name="avatar" accept="image/*" required style="margin-top:6px;font-size:13px;" />
-          <div style="font-size:12px;color:#7C8A80;margin-top:4px;">JPG / PNG / WEBP · up to 5&nbsp;MB</div>
+          <label style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#5B6B62;">Profile picture <span style="color:#7C8A80;font-weight:400;text-transform:none;">(optional)</span></label>
+          <input type="file" id="avatar" name="avatar" accept="image/*" style="margin-top:6px;font-size:13px;" />
+          <div style="font-size:12px;color:#7C8A80;margin-top:4px;">JPG / PNG / WEBP · up to 5&nbsp;MB — or skip it, we'll use your initials</div>
         </div>
       </div>
 
@@ -55,11 +55,11 @@
       <div class="form-row">
         <div class="field">
           <label>Where you are now</label>
-          <input name="location" value="{{ form.get('location','') }}" placeholder="e.g. Lagos, Nigeria" />
+          <input id="location" name="location" value="{{ form.get('location','') }}" placeholder="e.g. Lagos, Nigeria" />
         </div>
-        <div class="field">
-          <label>Destination (where you are / want to be)</label>
-          <input name="destination" value="{{ form.get('destination','') }}" placeholder="e.g. United Kingdom" />
+        <div class="field" id="destinationField">
+          <label>Destination (where you want to be)</label>
+          <input id="destination" name="destination" value="{{ form.get('destination','') }}" placeholder="e.g. United Kingdom" />
         </div>
       </div>
 
@@ -83,6 +83,32 @@
     if (!f) return;
     var url = URL.createObjectURL(f);
     prev.innerHTML = '<img src="' + url + '" alt="preview" />';
+  });
+
+  // "Already abroad" members' current location *is* their destination --
+  // asking again is redundant, so hide that field and mirror the value
+  // into it instead of leaving it blank. Blank would silently break the
+  // server's auto-join-matching-room logic (social.py), which matches new
+  // members into a community room by their `destination` field.
+  var typeRadios = document.querySelectorAll('input[name="user_type"]');
+  var destField = document.getElementById('destinationField');
+  var locationInput = document.getElementById('location');
+  var destinationInput = document.getElementById('destination');
+  var form = destField.closest('form');
+
+  function isAbroad() {
+    return document.querySelector('input[name="user_type"]:checked').value === 'abroad';
+  }
+  function updateFieldsForType() {
+    destField.style.display = isAbroad() ? 'none' : '';
+  }
+  Array.prototype.forEach.call(typeRadios, function (r) {
+    r.addEventListener('change', updateFieldsForType);
+  });
+  updateFieldsForType();
+
+  form.addEventListener('submit', function () {
+    if (isAbroad()) destinationInput.value = locationInput.value;
   });
 </script>
 </body>

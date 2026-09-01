@@ -57,6 +57,10 @@
             </div>
           </div>
           <div class="post-content">{{ item.post.content }}</div>
+          <button class="post-vote {{ 'voted' if item.post.my_vote else '' }}" data-post-id="{{ item.post.id }}" {{ 'disabled title="You can\'t upvote your own post"' | safe if item.post.mine else '' }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+            <span class="pv-count">{{ item.post.score }}</span>
+          </button>
           <div class="post-replies">
             {% for reply in item.replies %}
             <div class="card post-card post-reply" data-post-id="{{ reply.id }}" id="post-{{ reply.id }}">
@@ -72,6 +76,10 @@
                 </div>
               </div>
               <div class="post-content">{{ reply.content }}</div>
+              <button class="post-vote {{ 'voted' if reply.my_vote else '' }}" data-post-id="{{ reply.id }}" {{ 'disabled title="You can\'t upvote your own post"' | safe if reply.mine else '' }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+                <span class="pv-count">{{ reply.score }}</span>
+              </button>
             </div>
             {% endfor %}
           </div>
@@ -107,7 +115,16 @@
 </div>
 {% endblock %}
 {% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/markdown.js') }}"></script>
 <script src="{{ url_for('static', filename='js/community.js') }}"></script>
+<script>
+// Server-rendered posts (the thread loop above) are plain escaped text --
+// reprocess through the same markdown renderer newly-posted messages use,
+// so history and live posts format consistently.
+Array.prototype.forEach.call(document.querySelectorAll('.post-content'), function (el) {
+  el.innerHTML = renderChatMarkdown(el.textContent);
+});
+</script>
 <script>
 // Slack-style: keep the message list scrolled to the newest, and grow the input.
 (function () {

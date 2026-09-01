@@ -23,17 +23,14 @@
 
     <div class="row2">
       <div class="field naira-input">
-        <label for="salary">Monthly salary</label>
+        <label for="salary">Monthly take-home pay</label>
         <span class="prefix">₦</span>
         <input id="salary" inputmode="numeric" placeholder="600,000" />
       </div>
       <div class="field">
         <label for="city">City</label>
-        <select id="city">
-          <option value="lagos">Lagos</option>
-          <option value="abuja">Abuja</option>
-          <option value="portharcourt">Port Harcourt</option>
-        </select>
+        <input list="cities" id="city" placeholder="Lagos, Abuja, Port Harcourt…" autocomplete="off" />
+        <datalist id="cities"></datalist>
       </div>
     </div>
 
@@ -57,13 +54,14 @@
         <div class="k" style="margin-bottom:4px;">ROI Score</div>
         <h2 class="bp-verdict" id="bpVerdict">—</h2>
         <p class="bp-sub" id="bpSub">—</p>
+        <p class="chart-note" id="estimateNote"></p>
         <div class="bp-figures">
           <div class="bp-figure">
-            <div class="k">Net pay, Lagos</div>
+            <div class="k" id="bpNairaLabel">Left after rent</div>
             <div class="v num" id="bpNaira">—</div>
           </div>
           <div class="bp-figure">
-            <div class="k">Net pay, after your Master's</div>
+            <div class="k" id="bpForeignLabel">Left after rent, post-Master's</div>
             <div class="v num" id="bpForeign">—</div>
           </div>
         </div>
@@ -150,7 +148,7 @@
   </section>
 
   <footer>
-    <p><b>Prototype note:</b> exchange rates are live, fetched server-side and cached (see the badge above). Salary, tax and rent figures are still illustrative benchmarks for demonstrating the product logic. A production build would source salary bands from Payscale/Glassdoor, and cost-of-living/rent from Numbeo (requires a paid API key, called server-side).</p>
+    <p><b>Methodology:</b> exchange rates are live, fetched server-side and cached (see the badge above). The "Monthly salary" you enter is treated as take-home pay (already net of Nigerian tax) — it's deducted only for modeled Lagos/Abuja/Port Harcourt rent (capped at 40% of that take-home, since a real market rent charged flat would crush lower incomes unrealistically), not taxed again. Destination salary, tax and rent figures are a research snapshot (Aug 2026) sourced from official statistics bodies and tax authorities where available — UK: ONS/gov.uk/HMRC; Canada: Job Bank Canada (StatCan), CRA, CMHC; Germany: Entgeltatlas (Bundesagentur für Arbeit), destatis, BMF; Poland: GUS, Ministry of Finance, ZUS; Ireland: CSO, Revenue.ie, RTB. Nigeria rent uses real-estate market reports since no official NBS rent index exists. Study-phase housing costs use shared/dormitory accommodation figures (Studierendenwerk, SpareRoom, Rentals.ca, etc.), not the full post-graduation market rent. A few figures have no government-published occupation-level breakdown and use a named recruitment-market salary survey instead (e.g. Morgan McKinley for several Ireland roles); the returnee-qualification wage premium uses non-Nigeria-specific research (Egypt/West Africa) since no Nigeria-specific study was found. Destination tax calculations use simplified bracket models and omit some credits/allowances. Treat every figure as directional, not exact — this is a snapshot that should be refreshed periodically as tax bands and wages change.</p>
     <p>© TGM · Global Education ROI is a study-abroad investment-planning tool for TGM's counselling pipeline, not financial or immigration advice. Destination pay figures assume completion of an international qualification via a study route, not direct work migration.</p>
   </footer>
 

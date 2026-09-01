@@ -94,7 +94,11 @@ def _inject():
     me = None
     if session.get("student_id"):
         me = profile_dict(current_student())
-    return {"me": me, "nav_rooms": _rooms()}
+    # `ep` (current endpoint) is what app_base.html's nav uses to highlight
+    # the active page -- it was never actually set anywhere, so every
+    # `{{ 'on' if ep == '...' }}` check silently evaluated false and the nav
+    # never showed an active state at all.
+    return {"me": me, "nav_rooms": _rooms(), "ep": request.endpoint}
 
 
 # Gate: signed-in but not-yet-onboarded users get routed to onboarding.
@@ -134,14 +138,11 @@ def onboarding():
         destination = (request.form.get("destination") or "").strip()[:80]
         headline = (request.form.get("headline") or "").strip()[:120]
 
+        # Avatar is optional -- profile/post rendering already falls back to
+        # initials (see templates/_avatar.html) when avatar_path is empty, so
+        # there's nothing this blocks on; _save_avatar returning None (no
+        # file, wrong extension, or over the size limit) just leaves it unset.
         avatar_path = _save_avatar(row["id"], request.files.get("avatar"))
-        error = None
-        if not avatar_path:
-            error = "Please add a profile picture — it helps members connect with you."
-        if error:
-            return render_template(
-                "onboarding.html", error=error, form=request.form, rooms=_rooms()
-            )
 
         db.execute(
             """UPDATE students SET user_type = ?, location = ?, destination = ?,
@@ -442,6 +443,46 @@ def _parse_history(form, prefix):
         if title or org:
             out.append({"title": title, "org": org, "years": yr})
     return out
+
+
+# ---------------------------------------------------------------------------
+# Leaderboard -- top contributors by upvotes received on their posts.
+# community_votes already existed as a table with nothing reading it beyond
+# a single post's own score; this is the first place that rolls it up per
+# member, turning individual votes into visible reputation.
+# ---------------------------------------------------------------------------
+@social_bp.route("/leaderboard")
+@login_required
+def leaderboard():
+    db = get_db()
+    rows = db.execute(
+        """
+        SELECT s.id, s.display_name, s.email, s.avatar_path,
+            COALESCE(SUM(v.value), 0) AS total_score,
+            COUNT(DISTINCT p.id) AS post_count
+        FROM students s
+        JOIN community_posts p ON p.student_id = s.id AND p.is_hidden = 0
+        LEFT JOIN community_votes v ON v.post_id = p.id
+        GROUP BY s.id, s.display_name, s.email, s.avatar_path
+        HAVING COALESCE(SUM(v.value), 0) > 0
+        ORDER BY total_score DESC, post_count DESC
+        LIMIT 20
+        """
+    ).fetchall()
+
+    contributors = []
+    for i, row in enumerate(rows):
+        name = row["display_name"] or (row["email"].split("@")[0] if row["email"] else "Member")
+        contributors.append({
+            "rank": i + 1,
+            "id": row["id"],
+            "name": name,
+            "initials": "".join(w[0] for w in name.split()[:2]).upper() or "M",
+            "has_avatar": bool(row["avatar_path"]),
+            "total_score": row["total_score"],
+            "post_count": row["post_count"],
+        })
+    return render_template("leaderboard.html", contributors=contributors)
 
 
 # ---------------------------------------------------------------------------

@@ -107,6 +107,17 @@ form.inline{display:inline;}
 
 .empty{padding:40px;text-align:center;color:var(--faint);font-size:14px;}
 .warn{background:var(--amber-bg);border:1px solid #e7c36b;color:#5B4A11;padding:10px 14px;border-radius:10px;font-size:13px;margin:0 0 20px;max-width:80ch;}
+
+/* Inbox conversation view */
+.ac-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;}
+.ac-transcript{max-height:60vh;overflow-y:auto;display:flex;flex-direction:column;gap:10px;}
+.ac-bubble{max-width:75%;padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.5;white-space:pre-wrap;}
+.ac-bubble.ac-user{align-self:flex-end;background:var(--g-600);color:#fff;border-bottom-right-radius:4px;}
+.ac-bubble.ac-model{align-self:flex-start;background:var(--bg);border:1px solid var(--line);color:var(--body);border-bottom-left-radius:4px;}
+.ac-bubble.ac-counsellor{align-self:flex-start;background:var(--tint);border:1px solid var(--line2);color:var(--body);border-bottom-left-radius:4px;}
+.ac-system{align-self:center;font-size:12px;font-weight:600;color:var(--g-700);background:var(--tint);padding:6px 14px;border-radius:999px;}
+.ac-replybox{display:flex;gap:10px;align-items:flex-end;}
+.ac-replybox textarea{flex:1;padding:10px 14px;border-radius:10px;border:1px solid var(--line2);font-family:inherit;font-size:14px;resize:vertical;}
 .back{display:inline-flex;align-items:center;gap:6px;color:var(--mut);font-weight:600;font-size:13.5px;margin-bottom:14px;}
 .report-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:14px;}
 .report-meta{font-size:12px;color:var(--faint);margin-bottom:10px;}

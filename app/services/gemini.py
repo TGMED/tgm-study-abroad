@@ -34,6 +34,13 @@ def call_gemini(system_prompt, history, timeout=45):
             {"role": m["role"], "parts": [{"text": m["content"]}]}
             for m in recent
         ],
+        # The Worker retrieves matching knowledge-base chunks from Supabase
+        # automatically based on `contents` above; this just lets it fall
+        # back to a live web search (Gemini's google_search tool) when the
+        # knowledge base doesn't cover the question, instead of Amara
+        # refusing or guessing. Explicit rather than relying on the Worker's
+        # own default for this.
+        "web_search_enabled": True,
     }
 
     try:

@@ -1,7 +1,7 @@
 import datetime
 import os
 
-from flask import Blueprint, jsonify, redirect, render_template, request, url_for
+from flask import Blueprint, abort, jsonify, redirect, render_template, request, url_for
 
 from extensions import get_db, requires_admin_auth
 from blueprints.roi import GOOGLE_FORM_ACTION_URL, HUBSPOT_ACCESS_TOKEN
@@ -58,13 +58,20 @@ def _name(row):
 def _inject_admin():
     if not (request.path or "").startswith("/admin"):
         return {}
+    db = get_db()
     try:
-        n = get_db().execute(
+        n = db.execute(
             "SELECT COUNT(*) AS c FROM community_reports WHERE resolved_at IS NULL"
         ).fetchone()["c"]
     except Exception:
         n = 0
-    return {"open_reports": n}
+    try:
+        h = db.execute(
+            "SELECT COUNT(*) AS c FROM human_handoff_queue WHERE status = 'open'"
+        ).fetchone()["c"]
+    except Exception:
+        h = 0
+    return {"open_reports": n, "open_handoffs": h}
 
 
 def _delete_post_cascade(db, pid):
@@ -223,6 +230,129 @@ def admin_leads():
         google_form_configured=bool(GOOGLE_FORM_ACTION_URL),
         hubspot_configured=bool(HUBSPOT_ACCESS_TOKEN),
     )
+
+
+# ---------------------------------------------------------------------------
+# Human handoff inbox -- students Amara flagged (or a counsellor flagged
+# manually) as needing a human. Landing here never pauses Amara by itself;
+# she keeps answering normally until a counsellor actually opens a
+# conversation and clicks "Take over" below, so no one's ever left waiting
+# on a human who hasn't looked at the queue yet.
+# ---------------------------------------------------------------------------
+@admin_bp.route("/admin/inbox")
+@requires_admin_auth
+def admin_inbox():
+    db = get_db()
+    rows = db.execute(
+        """
+        SELECT q.id AS queue_id, q.student_id, q.reason, q.status, q.created_at, q.resolved_by,
+               s.display_name, s.email,
+               (SELECT content FROM chat_messages WHERE student_id = s.id ORDER BY id DESC LIMIT 1) AS last_message,
+               (SELECT created_at FROM chat_messages WHERE student_id = s.id ORDER BY id DESC LIMIT 1) AS last_message_at
+        FROM human_handoff_queue q
+        JOIN students s ON s.id = q.student_id
+        WHERE q.status IN ('open', 'assigned')
+        ORDER BY (q.status = 'assigned'), q.created_at DESC
+        """
+    ).fetchall()
+    conversations = []
+    for r in rows:
+        name = r["display_name"] or (r["email"].split("@")[0] if r["email"] else "Member")
+        conversations.append({
+            "queue_id": r["queue_id"], "student_id": r["student_id"], "name": name,
+            "initials": _initials(name), "reason": r["reason"], "status": r["status"],
+            "resolved_by": r["resolved_by"],
+            "last_message": (r["last_message"] or "")[:140], "ago": _ago(r["last_message_at"] or r["created_at"]),
+        })
+    return render_template("admin_inbox.html", conversations=conversations)
+
+
+@admin_bp.route("/admin/inbox/<int:sid>")
+@requires_admin_auth
+def admin_inbox_chat(sid):
+    db = get_db()
+    student = db.execute("SELECT * FROM students WHERE id = ?", (sid,)).fetchone()
+    if not student:
+        abort(404)
+    messages = db.execute(
+        "SELECT id, role, content, created_at FROM chat_messages WHERE student_id = ? ORDER BY id ASC",
+        (sid,),
+    ).fetchall()
+    queue_entry = db.execute(
+        "SELECT * FROM human_handoff_queue WHERE student_id = ? AND status IN ('open','assigned') "
+        "ORDER BY id DESC LIMIT 1",
+        (sid,),
+    ).fetchone()
+    last_id = messages[-1]["id"] if messages else 0
+    return render_template(
+        "admin_chat.html", student=student, name=_name(student), messages=messages,
+        queue_entry=queue_entry, last_id=last_id,
+    )
+
+
+@admin_bp.route("/admin/inbox/<int:sid>/poll")
+@requires_admin_auth
+def admin_inbox_poll(sid):
+    since = request.args.get("since", type=int, default=0)
+    db = get_db()
+    rows = db.execute(
+        "SELECT id, role, content FROM chat_messages WHERE student_id = ? AND id > ? ORDER BY id ASC",
+        (sid, since),
+    ).fetchall()
+    return jsonify({"ok": True, "messages": [{"id": r["id"], "role": r["role"], "content": r["content"]} for r in rows]})
+
+
+@admin_bp.route("/admin/inbox/<int:sid>/takeover", methods=["POST"])
+@requires_admin_auth
+def admin_inbox_takeover(sid):
+    db = get_db()
+    counsellor = (request.authorization.username if request.authorization else "counsellor")
+    db.execute("UPDATE students SET chat_mode = 'human' WHERE id = ?", (sid,))
+    db.execute(
+        "UPDATE human_handoff_queue SET status = 'assigned', resolved_by = ? "
+        "WHERE student_id = ? AND status = 'open'",
+        (counsellor, sid),
+    )
+    db.execute(
+        "INSERT INTO chat_messages (student_id, role, content, created_at) VALUES (?, 'system', ?, ?)",
+        (sid, "🟢 A TGM counsellor has joined the chat.", _now()),
+    )
+    db.commit()
+    return jsonify({"ok": True})
+
+
+@admin_bp.route("/admin/inbox/<int:sid>/reply", methods=["POST"])
+@requires_admin_auth
+def admin_inbox_reply(sid):
+    payload = request.get_json(silent=True) or {}
+    content = (payload.get("content") or "").strip()
+    if not content:
+        return jsonify({"ok": False, "error": "Message cannot be empty."}), 400
+    db = get_db()
+    cur = db.execute(
+        "INSERT INTO chat_messages (student_id, role, content, created_at) VALUES (?, 'counsellor', ?, ?)",
+        (sid, content, _now()),
+    )
+    db.commit()
+    return jsonify({"ok": True, "id": cur.lastrowid})
+
+
+@admin_bp.route("/admin/inbox/<int:sid>/handback", methods=["POST"])
+@requires_admin_auth
+def admin_inbox_handback(sid):
+    db = get_db()
+    db.execute("UPDATE students SET chat_mode = 'ai' WHERE id = ?", (sid,))
+    db.execute(
+        "UPDATE human_handoff_queue SET status = 'resolved', resolved_at = ? "
+        "WHERE student_id = ? AND status IN ('open','assigned')",
+        (_now(), sid),
+    )
+    db.execute(
+        "INSERT INTO chat_messages (student_id, role, content, created_at) VALUES (?, 'system', ?, ?)",
+        (sid, "↩️ Back with Amara — feel free to keep asking questions.", _now()),
+    )
+    db.commit()
+    return jsonify({"ok": True})
 
 
 # ---------------------------------------------------------------------------

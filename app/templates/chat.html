@@ -13,9 +13,13 @@
     </div>
   </div>
 
-  <div class="chat-window" id="chatWindow">
+  <div class="chat-window" id="chatWindow" data-last-id="{{ last_id }}">
     {% for m in messages %}
+      {% if m.role == 'system' %}
+      <div class="chat-system">{{ m.content }}</div>
+      {% else %}
       <div class="chat-bubble chat-{{ m.role }}">{{ m.content }}</div>
+      {% endif %}
     {% endfor %}
   </div>
   <p class="chat-error" id="chatError" style="display:none;"></p>
@@ -27,6 +31,10 @@
 </div>
 {% endblock %}
 {% block extra_scripts %}
-<script>window.__TGM_NEEDS_OPENING__ = {{ 'true' if needs_opening else 'false' }};</script>
+<script>
+  window.__TGM_NEEDS_OPENING__ = {{ 'true' if needs_opening else 'false' }};
+  window.__TGM_CHAT_MODE__ = {{ chat_mode|tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/markdown.js') }}"></script>
 <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
 {% endblock %}

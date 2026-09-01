@@ -1,0 +1,35 @@
+{% extends "admin_base.html" %}
+{% block title %}{{ name }} — Inbox — TGM Admin{% endblock %}
+{% block admin_content %}
+<div class="a-head ac-head">
+  <div>
+    <h1>{{ name }}</h1>
+    <p><a href="{{ url_for('admin.admin_inbox') }}">← Back to inbox</a> &nbsp;·&nbsp; <a href="{{ url_for('admin.admin_member', sid=student.id) }}">View member profile</a></p>
+  </div>
+  <div id="handoffControls">
+    {% if student.chat_mode == 'human' %}
+    <button class="btn btn-green" id="handbackBtn">↩️ Hand back to Amara</button>
+    {% else %}
+    <button class="btn btn-green" id="takeoverBtn">🟢 Take over this chat</button>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card ac-transcript" id="acTranscript" data-last-id="{{ last_id }}" data-sid="{{ student.id }}">
+  {% for m in messages %}
+    {% if m.role == 'system' %}
+    <div class="ac-system">{{ m.content }}</div>
+    {% else %}
+    <div class="ac-bubble ac-{{ m.role }}">{{ m.content }}</div>
+    {% endif %}
+  {% else %}
+  <div class="empty">No messages yet.</div>
+  {% endfor %}
+</div>
+
+<div class="card ac-replybox" id="acReplyBox" style="{{ '' if student.chat_mode == 'human' else 'display:none;' }}">
+  <textarea id="acInput" rows="2" placeholder="Reply as TGM Counsellor…"></textarea>
+  <button class="btn btn-green" id="acSendBtn">Send</button>
+</div>
+<script src="{{ url_for('static', filename='js/admin_inbox.js') }}"></script>
+{% endblock %}

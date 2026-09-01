@@ -1,0 +1,31 @@
+{% extends "admin_base.html" %}
+{% block title %}Inbox — TGM Admin{% endblock %}
+{% block admin_content %}
+<div class="a-head">
+  <h1>Human handoff inbox</h1>
+  <p>{{ conversations|length }} conversation{{ '' if conversations|length == 1 else 's' }} needing attention. Amara keeps answering normally until you take one over below.</p>
+</div>
+
+{% if conversations %}
+<div class="card" style="padding:8px 10px;">
+  <div class="act">
+    {% for c in conversations %}
+    <a class="act-item" href="{{ url_for('admin.admin_inbox_chat', sid=c.student_id) }}" style="text-decoration:none;color:inherit;">
+      <span class="av">{{ c.initials }}</span>
+      <div class="act-body">
+        <div class="act-meta">
+          <b>{{ c.name }}</b>
+          <span class="badge {{ 'active' if c.status == 'assigned' else 'frozen' }}">{{ 'Assigned' if c.status == 'assigned' else 'Needs human' }}</span>
+          {% if c.resolved_by %}<span>· with {{ c.resolved_by }}</span>{% endif %}
+          <span>· {{ c.ago }}</span>
+        </div>
+        <div class="act-text">{{ c.last_message or '—' }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% else %}
+<div class="empty">No one needs a human right now. 🎉</div>
+{% endif %}
+{% endblock %}

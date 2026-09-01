@@ -1,62 +1,270 @@
 (function(){
 
+  // ---------------------------------------------------------------------
+  // Sourced assumption data (replaces the earlier flat/guessed constants).
+  // Every salary/tax/rent figure below was pulled from official statistics
+  // bodies, tax authorities, or (where no government occupation-level data
+  // exists) a named, cited market survey -- research pass dated Aug 2026.
+  // Figures marked "proxy"/"best estimate" in the per-destination comments
+  // below are the ones no official source directly covers; everything else
+  // is a real published number, not a guess. This is still a snapshot, not
+  // a live feed -- refresh it periodically (tax bands and minimum wages in
+  // particular change yearly).
+  // ---------------------------------------------------------------------
+  var WEEKS_PER_MONTH = 52 / 12;
+
   var DATA = {
     cities: {
-      lagos:        { label:"Lagos",         code:"LOS", rentFactor:1.00 },
-      abuja:        { label:"Abuja",         code:"ABV", rentFactor:1.05 },
-      portharcourt: { label:"Port Harcourt", code:"PHC", rentFactor:0.75 }
+      // Nigeria has no official (NBS) rent index -- these are directional
+      // mid-range 1-bedroom figures from real-estate market aggregators,
+      // not a single authoritative statistical series. Source: Lagos from
+      // The Africanvestor (2026 rent update); Abuja/Port Harcourt from
+      // GidiStay's 2026 city rent guide. Refresh quarterly given ~25-40%
+      // y/y rent inflation reported amid naira volatility.
+      lagos:        { label:"Lagos",         code:"LOS", rent:185000 },
+      abuja:        { label:"Abuja",         code:"ABV", rent:150000 },
+      portharcourt: { label:"Port Harcourt", code:"PHC", rent:140000 }
     },
-    // Rent is modeled as a share of gross pay, not a flat market figure --
-    // a flat ₦250k/month applied to every salary made low earners (e.g.
-    // ₦70k/month) show wildly negative take-home, since nobody earning
-    // that little is actually renting a ₦250k/month apartment. 0.40 is
-    // calibrated so a ~₦600k/month earner in Lagos lands close to the old
-    // flat-₦250k figure; it scales down sensibly for lower salaries.
-    nigeriaRentShareOfGross: 0.40,
-    nigeriaTaxRate: 0.12,
-    nigeriaGrowth: 0.05,
-    ukRate: 2000,
+
+    // No official NBS "average wage growth" series exists; private-sector
+    // HR-platform estimates cluster around 5-8% nominal/year (Trading
+    // Economics/NBS minimum-wage data + HR salary-survey commentary), well
+    // below the ~15.9% CPI inflation NBS reported for June 2026 -- i.e.
+    // real wages have been falling. 0.06 is the midpoint of that nominal
+    // range, kept nominal (not inflation-adjusted) to match how every
+    // destination's growth rate below is also modeled in nominal terms.
+    nigeriaGrowth: 0.06,
 
     professions: [
-      { id:"swe",     label:"Software Engineer",        ukGBP:4200 },
-      { id:"nurse",   label:"Registered Nurse",         ukGBP:2600 },
-      { id:"acct",    label:"Accountant",               ukGBP:3100 },
-      { id:"teacher", label:"Secondary School Teacher", ukGBP:2900 },
-      { id:"civeng",  label:"Civil Engineer",           ukGBP:3300 },
-      { id:"analyst", label:"Data Analyst",             ukGBP:3400 },
-      { id:"doctor",  label:"Medical Doctor",           ukGBP:5200 },
-      { id:"mktg",    label:"Marketing Manager",        ukGBP:3600 },
-      { id:"design",  label:"Graphic Designer",         ukGBP:2500 },
-      { id:"mecheng", label:"Mechanical Engineer",      ukGBP:3300 },
-      { id:"pharm",   label:"Pharmacist",               ukGBP:3300 },
-      { id:"lawyer",  label:"Lawyer",                   ukGBP:4000 }
+      { id:"swe",     label:"Software Engineer" },
+      { id:"nurse",   label:"Registered Nurse" },
+      { id:"acct",    label:"Accountant" },
+      { id:"teacher", label:"Secondary School Teacher" },
+      { id:"civeng",  label:"Civil Engineer" },
+      { id:"analyst", label:"Data Analyst" },
+      { id:"doctor",  label:"Medical Doctor" },
+      { id:"mktg",    label:"Marketing Manager" },
+      { id:"design",  label:"Graphic Designer" },
+      { id:"mecheng", label:"Mechanical Engineer" },
+      { id:"pharm",   label:"Pharmacist" },
+      { id:"lawyer",  label:"Lawyer" }
     ],
 
+    // Each destination now carries its own real occupation salary table
+    // (monthly, local currency) instead of scaling a single UK figure by a
+    // guessed cross-country "factor". taxBands are cumulative marginal-rate
+    // brackets in ANNUAL local currency (Canada and Ireland are pre-merged
+    // federal/provincial or income-tax/USC tables); payroll entries are
+    // additional flat-rate contributions (NI, CPP/EI, German social
+    // insurance, ZUS, PRSI) applied only between their floor/ceiling.
     destinations: [
-      { id:"uk", label:"United Kingdom", flag:"🇬🇧", currency:"GBP", symbol:"£", suffix:false,
-        rate:2000, factor:1.00, taxRate:0.28, rent:1400, growth:0.035, visa:3,
+      {
+        id:"uk", label:"United Kingdom", flag:"🇬🇧", currency:"GBP", symbol:"£", suffix:false,
+        rate:2000, rent:1700,
+        // Study-phase housing (not the full 1-bed above): shared/HMO room
+        // rent, SpareRoom Rental Index, London, ~£980-995/month (2025) --
+        // more representative of a part-time-working student's budget than
+        // the halls-of-residence average (~£1,278/month, Unipol/HEPI).
+        studyRent:1000,
+        growth:0.042, visa:3,
         visaNote:"Student Route — well-trodden for Nigerians via licensed university sponsors; Graduate Route gives 2 years post-study work.",
-        studyMonths:"12–15 months", studyDuration:1.1 },
-      { id:"canada", label:"Canada", flag:"🇨🇦", currency:"CAD", symbol:"CA$", suffix:false,
-        rate:1050, factor:0.95, taxRate:0.25, rent:1800, growth:0.04, visa:4,
+        studyMonths:"12–15 months", studyDuration:1.1,
+        // Salaries: National Careers Service (gov.uk) job-profile bands,
+        // midpoint of stated range, except Nurse (NHS Band 5 entry, NHS
+        // Employers Agenda for Change 2025) and Doctor (FY1 basic, BMA pay
+        // scale 2025/26) which use the precise scale point. Monthly = /12.
+        salaries: { swe:4375, nurse:2587, acct:3750, teacher:2743, civeng:3833, analyst:3875, doctor:3236, mktg:3958, design:2708, mecheng:3667, pharm:3429, lawyer:4583 },
+        // Tax: Personal Allowance/Basic/Higher/Additional rate bands,
+        // gov.uk "Income Tax rates and Personal Allowances" 2025/26
+        // (ignores the >£100k allowance taper -- none of the salaries
+        // above reach it). Payroll: employee Class 1 National Insurance,
+        // gov.uk "National Insurance rates and categories" 2025/26.
+        taxBands:[[12570,0],[50270,0.20],[125140,0.40],[Infinity,0.45]],
+        payroll:[{rate:0.08,floor:12570,ceiling:50270},{rate:0.02,floor:50270,ceiling:Infinity}],
+        // Student Route: 20 hrs/week during term (gov.uk Student visa
+        // "Working" rules). Minimum wage: National Living Wage 21+,
+        // £12.21/hr from 1 Apr 2025 (gov.uk).
+        weeklyWorkHours:20, minWage:12.21
+      },
+      {
+        id:"canada", label:"Canada", flag:"🇨🇦", currency:"CAD", symbol:"CA$", suffix:false,
+        rate:1050, rent:2073,
+        // Study-phase housing: shared accommodation, Rentals.ca 2025 Toronto
+        // data (~$1,200/mo). Only ~7-9% of Toronto students actually live in
+        // (capacity-limited) on-campus residence, per Globe and Mail
+        // reporting on the city's off-campus housing market -- shared
+        // housing is the realistic modal outcome, not the exception.
+        studyRent:1200,
+        growth:0.025, visa:4,
         visaNote:"Study Permit — proof-of-funds scrutiny and 2024 intake caps have raised refusal rates for Nigerian applicants.",
-        studyMonths:"16–24 months", studyDuration:1.65 },
-      { id:"germany", label:"Germany", flag:"🇩🇪", currency:"EUR", symbol:"€", suffix:false,
-        rate:1650, factor:1.05, taxRate:0.30, rent:950, growth:0.03, visa:3,
+        studyMonths:"16–24 months", studyDuration:1.65,
+        // Salaries: Job Bank Canada wage reports (StatCan Labour Force
+        // Survey basis), Toronto Region median hourly x 1,950 hrs/yr where
+        // available, else Ontario-wide; Doctor is Job Bank's own annual
+        // family-physician figure; Lawyer uses a first-year-associate
+        // market survey (NALP Canada/Canadian Lawyer, not government data)
+        // since the province-wide median blends all experience levels.
+        salaries: { swe:9183, nurse:6596, acct:6642, teacher:7719, civeng:7813, analyst:7225, doctor:19479, mktg:9333, design:5313, mecheng:7542, pharm:8750, lawyer:10833 },
+        // Tax: federal (CRA, 2026 bands incl. basic personal amount) +
+        // Ontario provincial (2025 bands, ON 2026 not yet published) tax
+        // pre-merged into one combined marginal-rate table. Payroll: CPP
+        // 5.95% (+CPP2 4% on the next band) and EI 1.64%, both capped --
+        // Canada.ca "Payroll Deductions" / KPMG's rate summary, 2025/26.
+        taxBands:[[12747,0],[16452,0.0505],[52886,0.1905],[58523,0.2315],[105775,0.2965],[117045,0.3166],[150000,0.3716],[181440,0.3816],[220000,0.4116],[258482,0.4216],[Infinity,0.4616]],
+        payroll:[{rate:0.0595,floor:3500,ceiling:71300},{rate:0.04,floor:71300,ceiling:81200},{rate:0.0164,floor:0,ceiling:65700}],
+        // Off-campus work cap: 24 hrs/week during term, effective Nov 2024
+        // (IRCC). Minimum wage: Ontario general rate $17.60/hr from 1 Oct
+        // 2025 (Ontario.ca).
+        weeklyWorkHours:24, minWage:17.60
+      },
+      {
+        id:"germany", label:"Germany", flag:"🇩🇪", currency:"EUR", symbol:"€", suffix:false,
+        rate:1650, rent:860,
+        // Study-phase housing: weighted blend of Studierendenwerk dorm rent
+        // (€337/mo, Berlin) and shared-flat/WG rent (~€600/mo, 2025), using
+        // IW Köln's finding that 46.2% of international students in Germany
+        // live in dorms vs only 13.1% of domestic students -- the one
+        // destination where a real usage split, not just a price, was found.
+        studyRent:480,
+        growth:0.042, visa:3,
         visaNote:"National student visa — blocked account (~€11,900/yr) and B1/B2 German are the main hurdles, process is predictable.",
-        studyMonths:"18–24 months", studyDuration:1.75 },
-      { id:"poland", label:"Poland", flag:"🇵🇱", currency:"PLN", symbol:"zł", suffix:true,
-        rate:380, factor:0.55, taxRate:0.20, rent:2600, growth:0.06, visa:2,
+        studyMonths:"18–24 months", studyDuration:1.75,
+        // Salaries: Entgeltatlas (Bundesagentur für Arbeit federal salary
+        // explorer), national median except Doctor/Pharmacist which use
+        // Berlin-specific figures; Data Analyst uses the nearest matching
+        // occupation code (proxy, flagged); Lawyer's Entgeltatlas entry is
+        // censored above the contribution ceiling, so uses a market-range
+        // midpoint instead (not itself government data).
+        salaries: { swe:6083, nurse:4329, acct:3438, teacher:5450, civeng:5500, analyst:6475, doctor:6646, mktg:5014, design:3525, mecheng:5946, pharm:4558, lawyer:4167 },
+        // Tax: piecewise approximation of Germany's continuous §32a EStG
+        // formula (BMF Lohnsteuer-Handbuch 2026 zone boundaries) -- a true
+        // per-euro formula would be more precise but this tracks the same
+        // zone thresholds/average marginal rates. Payroll: combined
+        // employee social-insurance share (pension+health+unemployment+
+        // long-term care) ≈20.9% of gross, per BMAS 2025 contribution
+        // rates, applied uncapped (all salaries above are below the real
+        // contribution ceiling).
+        taxBands:[[12348,0],[17799,0.19],[69878,0.33],[277825,0.42],[Infinity,0.45]],
+        payroll:[{rate:0.209,floor:0,ceiling:Infinity}],
+        // Student work cap: 140 full days/year, ≈20 hrs/week during term
+        // (Fachkräfteeinwanderungsgesetz, effective Mar 2024). Minimum
+        // wage: €13.90/hr from 1 Jan 2026 (BMAS/Mindestlohnkommission).
+        weeklyWorkHours:20, minWage:13.90
+      },
+      {
+        id:"poland", label:"Poland", flag:"🇵🇱", currency:"PLN", symbol:"zł", suffix:true,
+        rate:380, rent:5300,
+        // Study-phase housing: blended estimate weighted toward university
+        // dormitory (akademik) rates (~400-800 PLN/mo across UW/WUT/SGH/
+        // SGGW, ~650 PLN average), since dorms are the default cost-
+        // conscious choice and are often prioritized for international
+        // students -- no single official composite exists for this figure.
+        studyRent:800,
+        growth:0.091, visa:2,
         visaNote:"EU national student visa — lower financial threshold, decent approval rates, Schengen access.",
-        studyMonths:"12 months", studyDuration:1.0 },
-      { id:"ireland", label:"Ireland", flag:"🇮🇪", currency:"EUR", symbol:"€", suffix:false,
-        rate:1650, factor:1.10, taxRate:0.28, rent:1600, growth:0.035, visa:3,
+        studyMonths:"12 months", studyDuration:1.0,
+        // Salaries: Sedlak & Sedlak's national salary survey (wynagrodzenia.pl),
+        // national medians (no Warsaw-only breakdown exists per-occupation).
+        // Teacher uses the statutory base rate only (real pay is typically
+        // higher with allowances, not captured here); Data Analyst and
+        // Mechanical Engineer use nearest-title proxies (flagged); Doctor
+        // uses the Ministry of Health's resident-physician pay regulation.
+        salaries: { swe:11900, nurse:8970, acct:7660, teacher:6211, civeng:9120, analyst:9750, doctor:11655, mktg:11250, design:7180, mecheng:7550, pharm:8800, lawyer:7360 },
+        // Tax: PIT 12%/32% bands with a PLN 30,000/year tax-free amount
+        // (applied as a PLN 3,600/year credit) — podatki.gov.pl, 2025/26.
+        // Payroll: ZUS social insurance (~13.71%) + health insurance (9%),
+        // both applied uncapped here as a simplification — zus.pl, 2025/26.
+        taxBands:[[120000,0.12],[Infinity,0.32]], taxCredit:3600,
+        payroll:[{rate:0.2271,floor:0,ceiling:Infinity}],
+        // Non-EU degree students: 20 hrs/week during term, 40 hrs/week
+        // during breaks, no separate work permit needed (Foreigners Act,
+        // per 2025 immigration-law summaries). Minimum wage: PLN 31.40/hr
+        // from 1 Jan 2026 (Dziennik Ustaw/gov.pl regulation).
+        weeklyWorkHours:20, minWage:31.40
+      },
+      {
+        id:"ireland", label:"Ireland", flag:"🇮🇪", currency:"EUR", symbol:"€", suffix:false,
+        rate:1650, rent:1592,
+        // Study-phase housing: purpose-built student accommodation (PBSA),
+        // Cushman & Wakefield Irish Student Accommodation Review (~€1,100-
+        // 1,150/mo) -- PBSA is structurally the more accessible option for
+        // international students (short academic-term licences, no local
+        // guarantor needed), vs. shared digs (~€750/mo) which typically
+        // require in-person viewing and a local guarantor.
+        studyRent:1100,
+        growth:0.035, visa:3,
         visaNote:"Non-EEA student visa — tuition paid upfront plus proof of funds; Stamp 1G gives up to 2 years post-study work.",
-        studyMonths:"12–16 months", studyDuration:1.15 }
+        studyMonths:"12–16 months", studyDuration:1.15,
+        // Salaries: Morgan McKinley Ireland Salary Guide 2026 (recruitment
+        // survey, not government data — CSO doesn't publish occupation-
+        // level earnings) except Nurse/Doctor, which use HSE's official
+        // Consolidated Pay Scales; Civil/Mechanical Engineer use Engineers
+        // Ireland's 2025 salary survey; Pharmacist is the weakest-sourced
+        // entry (secondary aggregator of the HSE scale).
+        salaries: { swe:5000, nurse:3181, acct:5417, teacher:3951, civeng:4583, analyst:4583, doctor:4844, mktg:6667, design:4167, mecheng:4375, pharm:4083, lawyer:5917 },
+        // Tax: income tax 20%/40% bands + USC (Universal Social Charge)
+        // bands pre-merged into one combined marginal-rate table — both
+        // from Revenue.ie, 2025/26 (income tax bands unchanged in Budget
+        // 2026). Ignores personal tax credits, which would lower the
+        // effective rate somewhat at low incomes. Payroll: employee PRSI
+        // Class A, flat 4.2% (gov.ie, 2025/26).
+        taxBands:[[12012,0.205],[28700,0.22],[44000,0.23],[70044,0.43],[Infinity,0.48]],
+        payroll:[{rate:0.042,floor:0,ceiling:Infinity}],
+        // Stamp 2 non-EEA students: 20 hrs/week during term, 40 hrs/week
+        // during official college holidays (citizensinformation.ie).
+        // Minimum wage: €14.15/hr (age 20+) from 1 Jan 2026 (gov.ie).
+        weeklyWorkHours:20, minWage:14.15
+      }
     ]
   };
 
-  var state = { profession:null, salary:null, city:"lagos", destination:null, spouse:false, children:0, familyOpen:false, calculated:false };
+  // Progressive marginal-rate tax on ANNUAL income. `bands` is a list of
+  // [upperThreshold, rate] pairs, contiguous from 0, last threshold Infinity.
+  function marginalTax(annual, bands){
+    var tax = 0, prev = 0;
+    for(var i=0; i<bands.length; i++){
+      var upper = bands[i][0], rate = bands[i][1];
+      if(annual > prev){ tax += (Math.min(annual, upper) - prev) * rate; }
+      prev = upper;
+      if(annual <= upper) break;
+    }
+    return tax;
+  }
+  // A flat-rate contribution (NI/CPP/ZUS/PRSI-style) applied only to the
+  // slice of annual income between floor and ceiling.
+  function bandedContribution(annual, rate, floor, ceiling){
+    var amt = Math.min(annual, ceiling) - floor;
+    return amt > 0 ? amt * rate : 0;
+  }
+  function destAnnualDeduction(dest, annual){
+    var tax = Math.max(0, marginalTax(annual, dest.taxBands) - (dest.taxCredit || 0));
+    var payroll = 0;
+    (dest.payroll || []).forEach(function(p){ payroll += bandedContribution(annual, p.rate, p.floor, p.ceiling); });
+    return tax + payroll;
+  }
+  // The "Monthly salary" field is what people actually type when asked
+  // this casually -- their take-home pay, already net of tax -- not a
+  // gross figure. Taxing it again would double-count PAYE. So Nigeria PAYE
+  // isn't applied on this side at all; the entered figure is deducted only
+  // for rent, the one expense "take-home pay" doesn't already net out.
+  //
+  // Cap: cityData.rent is a real mid-range 1-bed market figure, but charging
+  // it flat regardless of income means a modest earner's net pay gets
+  // crushed by a rent they'd never actually take on -- nobody earning
+  // ₦150,000/month rents a ₦150,000/month Abuja apartment. Capping at 40% of
+  // take-home keeps the sourced figure as the ceiling for anyone who can
+  // plausibly afford it, while scaling down realistically below that.
+  var NIGERIA_RENT_AFFORDABILITY_CAP = 0.40;
+
+  function nigeriaTakeHomeAfterRent(monthlyNet, cityResolved, spouse, children){
+    var householdMult = 1 + (spouse?0.4:0) + children*0.25;
+    var rentBase = Math.min(cityResolved.rent, monthlyNet * NIGERIA_RENT_AFFORDABILITY_CAP);
+    var rent = rentBase * householdMult;
+    var childCost = children * rentBase * 0.15;
+    return monthlyNet - rent - childCost;
+  }
+
+  var state = { profession:null, salary:null, destination:null, spouse:false, children:0, familyOpen:false, calculated:false };
 
   var $ = function(id){ return document.getElementById(id); };
   function fmt(n){ return Math.round(n).toLocaleString('en-US'); }
@@ -75,7 +283,6 @@
   function applyLiveRates(json){
     var r = json.rates;
     if(!r) return false;
-    if(r.GBP) DATA.ukRate = r.GBP;
     DATA.destinations.forEach(function(d){
       if(r[d.currency]) d.rate = r[d.currency];
     });
@@ -106,6 +313,14 @@
     professionList.appendChild(opt);
   });
 
+  // ---------- populate cities ----------
+  var cityList = $('cities');
+  Object.keys(DATA.cities).forEach(function(key){
+    var opt = document.createElement('option');
+    opt.value = DATA.cities[key].label;
+    cityList.appendChild(opt);
+  });
+
   // ---------- destination chips ----------
   var destWrap = $('destinations');
   DATA.destinations.forEach(function(d){
@@ -124,11 +339,45 @@
     destWrap.appendChild(el);
   });
 
-  function findProfession(label){
-    label = (label||'').trim().toLowerCase();
-    for(var i=0;i<DATA.professions.length;i++){ if(DATA.professions[i].label.toLowerCase()===label) return DATA.professions[i]; }
-    return null;
+  // Profession and city are free text -- not limited to the sourced lists.
+  // A typed value that matches a known label (case-insensitively) gets the
+  // real sourced figure; anything else still calculates, using a clearly-
+  // labeled average/fallback instead of either refusing input or silently
+  // presenting a guess as if it were sourced data (see estimateNote in
+  // runCalculation).
+  function resolveProfession(text){
+    var norm = (text||'').trim().toLowerCase();
+    if(!norm) return null;
+    for(var i=0;i<DATA.professions.length;i++){
+      if(DATA.professions[i].label.toLowerCase()===norm) return { id: DATA.professions[i].id, label: DATA.professions[i].label, sourced:true };
+    }
+    return { id: null, label: (text||'').trim(), sourced:false };
   }
+
+  // Average of the 12 sourced salaries for a destination, used as the
+  // fallback baseline when the typed profession has no specific sourced
+  // figure -- a generic "professional" anchor rather than a made-up number
+  // for that specific unmatched title.
+  function destAverageSalary(dest){
+    var vals = Object.keys(dest.salaries).map(function(k){ return dest.salaries[k]; });
+    return vals.reduce(function(a,b){ return a+b; }, 0) / vals.length;
+  }
+
+  function resolveCity(text){
+    var norm = (text||'').trim().toLowerCase();
+    if(!norm) return null;
+    for(var key in DATA.cities){
+      if(DATA.cities[key].label.toLowerCase()===norm){
+        var c = DATA.cities[key];
+        return { label:c.label, code:c.code, rent:c.rent, sourced:true };
+      }
+    }
+    var typed = (text||'').trim();
+    var rents = Object.keys(DATA.cities).map(function(k){ return DATA.cities[k].rent; });
+    var avgRent = rents.reduce(function(a,b){ return a+b; }, 0) / rents.length;
+    return { label:typed, code:typed.slice(0,3).toUpperCase(), rent:avgRent, sourced:false };
+  }
+
   function findDestination(id){
     for(var i=0;i<DATA.destinations.length;i++){ if(DATA.destinations[i].id===id) return DATA.destinations[i]; }
     return null;
@@ -136,8 +385,9 @@
 
   function updateCalcButton(){
     var salaryVal = parseFloat(($('salary').value||'').replace(/,/g,''));
-    var prof = findProfession($('profession').value);
-    var ok = prof && salaryVal > 0 && state.destination;
+    var profText = ($('profession').value||'').trim();
+    var cityText = ($('city').value||'').trim();
+    var ok = profText && salaryVal > 0 && cityText && state.destination;
     $('calcBtn').disabled = !ok;
   }
 
@@ -148,7 +398,7 @@
     updateCalcButton();
     if(state.calculated) runCalculation();
   });
-  $('city').addEventListener('change', function(){ state.city = this.value; if(state.calculated) runCalculation(); });
+  $('city').addEventListener('input', function(){ updateCalcButton(); if(state.calculated) runCalculation(); });
 
   // ---------- family mode ----------
   $('familyToggleBtn').addEventListener('click', function(){
@@ -161,77 +411,66 @@
   $('famPlus').addEventListener('click', function(){ state.children = Math.min(6, state.children+1); $('famCount').textContent = state.children; if(state.calculated) runCalculation(); });
 
   // ---------- calculation engine ----------
-  function computeForYear(profession, city, dest, spouse, children, year){
-    var cityData = DATA.cities[city];
-    var householdMult = 1 + (spouse?0.4:0) + children*0.25;
-
+  // Nigeria "without further study" trajectory (today's role, growing at
+  // DATA.nigeriaGrowth). Foreign figures used to be computed here too but
+  // were dead code -- computeDestNet below is what the chart actually uses
+  // for the destination side.
+  function computeForYear(cityResolved, spouse, children, year){
     var salaryInputNaira = parseFloat(($('salary').value||'0').replace(/,/g,''));
-    var nairaGross = salaryInputNaira * Math.pow(1+DATA.nigeriaGrowth, year);
-    var nairaRentBase = nairaGross * DATA.nigeriaRentShareOfGross;
-    var nairaRent = nairaRentBase * cityData.rentFactor * householdMult;
-    var nairaChildCost = children * (nairaRentBase * cityData.rentFactor) * 0.15;
-    var nairaTax = nairaGross * DATA.nigeriaTaxRate;
-    var nairaNet = nairaGross - nairaTax - nairaRent - nairaChildCost;
-
-    var ukBaselineNGN = profession.ukGBP * DATA.ukRate;
-    var foreignLocalGross = (ukBaselineNGN * dest.factor / dest.rate) * Math.pow(1+dest.growth, year);
-    var foreignRent = dest.rent * householdMult;
-    var foreignChildCost = children * dest.rent * 0.3;
-    var foreignTax = foreignLocalGross * dest.taxRate;
-    var foreignNetLocal = foreignLocalGross - foreignTax - foreignRent - foreignChildCost;
-    var foreignNetNGN = foreignNetLocal * dest.rate;
-
-    return { nairaNet:nairaNet, foreignNetLocal:foreignNetLocal, foreignNetNGN:foreignNetNGN, nairaGross:nairaGross, foreignLocalGross:foreignLocalGross };
+    var monthlyNet = salaryInputNaira * Math.pow(1+DATA.nigeriaGrowth, year);
+    return { nairaNet: nigeriaTakeHomeAfterRent(monthlyNet, cityResolved, spouse, children) };
   }
-
-  // Illustrative assumption: while studying, income abroad is limited to
-  // modest part-time work (common student-visa allowance), not the full
-  // qualified-professional salary -- that only starts at graduation. This is
-  // what turns the trajectory into a real staged path (low during study,
-  // a step up at graduation, growth from there) instead of a smooth curve
-  // that implies full foreign pay from day one.
-  var DURING_STUDY_INCOME_FACTOR = 0.2;
 
   function computeDestNet(profession, dest, spouse, children, year){
     var householdMult = 1 + (spouse?0.4:0) + children*0.25;
-    var ukBaselineNGN = profession.ukGBP * DATA.ukRate;
-    var baselineLocalGross = ukBaselineNGN * dest.factor / dest.rate;
-    var rent = dest.rent * householdMult;
-    var childCost = children * dest.rent * 0.3;
+    // Unmatched profession (typed something outside the 12 sourced titles):
+    // fall back to this destination's average sourced salary as a generic
+    // professional baseline, rather than fabricating a specific number for
+    // that title -- runCalculation flags this to the user via estimateNote.
+    var qualifiedMonthly = profession.id ? dest.salaries[profession.id] : destAverageSalary(dest);
     var studying = year < dest.studyDuration;
 
-    var localGross = studying
-      ? baselineLocalGross * DURING_STUDY_INCOME_FACTOR
-      : baselineLocalGross * Math.pow(1+dest.growth, year - dest.studyDuration);
+    // A student on part-time minimum-wage income doesn't rent the same
+    // solo 1-bed a working graduate does -- they're in halls/dorms or
+    // shared housing (dest.studyRent, sourced separately per destination),
+    // not the full market dest.rent figure used once qualified/working.
+    var rentBase = studying ? dest.studyRent : dest.rent;
+    var rent = rentBase * householdMult;
+    var childCost = children * rentBase * 0.3;
 
-    var tax = localGross * dest.taxRate;
-    var netLocal = localGross - tax - rent - childCost;
+    // While studying, income is capped at what the destination's own
+    // student-visa work-hour limit and minimum wage actually allow --
+    // hours/week x local minimum wage x weeks/month -- not an arbitrary
+    // fraction of the qualified salary. Full qualified pay only starts at
+    // graduation, which is what turns the trajectory into a real staged
+    // path (low during study, a step up at graduation, growth from there).
+    var localGross = studying
+      ? dest.weeklyWorkHours * dest.minWage * WEEKS_PER_MONTH
+      : qualifiedMonthly * Math.pow(1+dest.growth, year - dest.studyDuration);
+
+    var deduction = destAnnualDeduction(dest, localGross * 12) / 12;
+    var netLocal = localGross - deduction - rent - childCost;
     return { foreignNetLocal:netLocal, foreignNetNGN:netLocal*dest.rate, phase: studying ? 'study' : 'working' };
   }
 
-  // Illustrative: many students plan to return to Nigeria after finishing
-  // the Master's rather than stay abroad. An internationally earned
-  // qualification typically commands a real premium in the Nigerian job
-  // market -- modeled here as a one-time multiplier applied to what the
-  // person's Nigeria salary would have grown to by graduation, then
-  // growing at the normal local rate from there. This is a rough,
-  // clearly-illustrative assumption (not a benchmarked figure), same as
-  // the study-phase income factor above.
-  var RETURNEE_QUALIFICATION_PREMIUM = 1.6;
+  // Many students plan to return to Nigeria after finishing the Master's
+  // rather than stay abroad. No Nigeria-specific study of the wage premium
+  // for returnees with a foreign postgraduate qualification exists; the
+  // closest available proxy is Jackline Wahba's IZA World of Labor review,
+  // which finds Egyptian university-graduate returnees earn ~24% more than
+  // non-migrant graduates (West African returnees see a premium mainly when
+  // returning from an OECD country, consistent with our UK/Canada/Germany/
+  // Ireland destinations). 1.20 (a 20% premium) sits near that figure --
+  // flagged explicitly as a non-Nigeria-specific proxy, not a benchmarked
+  // Nigerian number.
+  var RETURNEE_QUALIFICATION_PREMIUM = 1.20;
 
-  function computeNigeriaReturneeNet(city, spouse, children, studyDuration, year){
-    var cityData = DATA.cities[city];
-    var householdMult = 1 + (spouse?0.4:0) + children*0.25;
+  function computeNigeriaReturneeNet(cityResolved, spouse, children, studyDuration, year){
     var salaryInputNaira = parseFloat(($('salary').value||'0').replace(/,/g,''));
-    var grossAtReturn = salaryInputNaira * Math.pow(1+DATA.nigeriaGrowth, studyDuration) * RETURNEE_QUALIFICATION_PREMIUM;
+    var netAtReturn = salaryInputNaira * Math.pow(1+DATA.nigeriaGrowth, studyDuration) * RETURNEE_QUALIFICATION_PREMIUM;
     var yearsSinceReturn = Math.max(0, year - studyDuration);
-    var gross = grossAtReturn * Math.pow(1+DATA.nigeriaGrowth, yearsSinceReturn);
-    var rentBase = gross * DATA.nigeriaRentShareOfGross;
-    var rent = rentBase * cityData.rentFactor * householdMult;
-    var childCost = children * (rentBase * cityData.rentFactor) * 0.15;
-    var tax = gross * DATA.nigeriaTaxRate;
-    var net = gross - tax - rent - childCost;
-    return { nairaNet: net, nairaGross: gross };
+    var monthlyNet = netAtReturn * Math.pow(1+DATA.nigeriaGrowth, yearsSinceReturn);
+    return { nairaNet: nigeriaTakeHomeAfterRent(monthlyNet, cityResolved, spouse, children) };
   }
 
   function yearLabel(y){
@@ -278,13 +517,14 @@
   }
 
   function runCalculation(){
-    var prof = findProfession($('profession').value);
+    var prof = resolveProfession($('profession').value);
+    var cityResolved = resolveCity($('city').value);
     var dest = findDestination(state.destination);
-    if(!prof || !dest) return;
+    if(!prof || !cityResolved || !dest) return;
     state.profession = prof; state.calculated = true;
 
-    var cityLabel = DATA.cities[state.city].label;
-    var y0 = computeForYear(prof, state.city, dest, state.spouse, state.children, 0);
+    var cityLabel = cityResolved.label;
+    var y0 = computeForYear(cityResolved, state.spouse, state.children, 0);
     // The headline ROI compares today's actual Nigeria pay against the
     // destination salary you'd actually earn once qualified (i.e. right at
     // graduation) -- not an immediate foreign salary, since that's not real.
@@ -293,12 +533,24 @@
     var score = scoreFromRatio(ratio);
     var v = verdictFor(ratio);
 
-    $('bpFrom').textContent = DATA.cities[state.city].code;
+    // Profession/city outside the sourced lists still calculate (using the
+    // fallback baselines in computeDestNet/resolveCity) -- but the user
+    // should see that a specific figure was substituted, not just get a
+    // number that looks as precisely sourced as everything else.
+    var estimateNotes = [];
+    if(!prof.sourced) estimateNotes.push('"' + prof.label + '" isn\'t one of our sourced occupations — using ' + dest.label + '\'s average professional salary instead.');
+    if(!cityResolved.sourced) estimateNotes.push('"' + cityResolved.label + '" isn\'t one of our sourced Nigerian cities — using the average of Lagos/Abuja/Port Harcourt rent instead.');
+    $('estimateNote').textContent = estimateNotes.join(' ');
+    $('estimateNote').classList.toggle('show', estimateNotes.length > 0);
+
+    $('bpFrom').textContent = cityResolved.code;
     $('bpTo').textContent = dest.id === 'uk' ? 'LON' : dest.id==='canada' ? 'YYZ' : dest.id==='germany' ? 'BER' : dest.id==='poland' ? 'WAW' : 'DUB';
     $('bpProfession').textContent = ' · ' + prof.label;
     $('bpVerdict').innerHTML = score + '<span style="font-size:0.4em; color:var(--text-muted);">/100</span>';
     $('bpSub').textContent = v.text + ' — ' + v.sub;
+    $('bpNairaLabel').textContent = 'Left after rent, ' + cityLabel;
     $('bpNaira').textContent = money(y0.nairaNet, '₦', false) + '/mo';
+    $('bpForeignLabel').textContent = 'Left after rent, ' + dest.label;
     $('bpForeign').textContent = money(destAtGrad.foreignNetLocal, dest.symbol, dest.suffix) + '/mo';
     $('bpMultiplier').textContent = ratio.toFixed(1) + 'x';
 
@@ -321,7 +573,7 @@
     // the destination curve step up at graduation instead of looking like
     // smooth, immediate foreign pay from day one.
     var years = buildMilestoneYears(dest.studyDuration);
-    var nigeriaSeries = years.map(function(y){ return computeForYear(prof, state.city, dest, state.spouse, state.children, y).nairaNet; });
+    var nigeriaSeries = years.map(function(y){ return computeForYear(cityResolved, state.spouse, state.children, y).nairaNet; });
     var destSeries = years.map(function(y){ return computeDestNet(prof, dest, state.spouse, state.children, y).foreignNetNGN; });
     renderChart(years, nigeriaSeries, destSeries, 'Without further study', 'With a Master\'s abroad', dest.studyDuration);
     renderTable(years, nigeriaSeries, destSeries);
@@ -330,33 +582,35 @@
     // Alternative path: return to Nigeria after graduating instead of staying
     // abroad. Uses the qualification-premium model above, not the "stay
     // abroad" destination figures.
-    var returneeAtGrad = computeNigeriaReturneeNet(state.city, state.spouse, state.children, dest.studyDuration, dest.studyDuration);
-    var returneeYear5 = computeNigeriaReturneeNet(state.city, state.spouse, state.children, dest.studyDuration, 5);
-    renderPathBreakdown(prof, dest, cityLabel, y0, destDuringStudy, destAtGrad, ratio, v,
+    var returneeAtGrad = computeNigeriaReturneeNet(cityResolved, state.spouse, state.children, dest.studyDuration, dest.studyDuration);
+    var returneeYear5 = computeNigeriaReturneeNet(cityResolved, state.spouse, state.children, dest.studyDuration, 5);
+    var enteredTakeHome = parseFloat(($('salary').value||'0').replace(/,/g,'')) || 0;
+    renderPathBreakdown(prof, dest, cityLabel, enteredTakeHome, y0, destDuringStudy, destAtGrad, ratio, v,
       nigeriaSeries[nigeriaSeries.length-1], destSeries[destSeries.length-1], returneeAtGrad, returneeYear5);
 
     $('results').classList.add('show');
-    lastCalc = { prof:prof, dest:dest, ratio:ratio, score:score, v:v, y0:y0, destAtGrad:destAtGrad };
+    lastCalc = { prof:prof, dest:dest, city:cityResolved, ratio:ratio, score:score, v:v, y0:y0, destAtGrad:destAtGrad };
   }
 
   // ---------- plain-English breakdown ----------
-  function renderPathBreakdown(prof, dest, cityLabel, y0, destDuringStudy, destAtGrad, ratio, v, finalNigeriaNGN, finalDestNGN, returneeAtGrad, returneeYear5){
+  function renderPathBreakdown(prof, dest, cityLabel, enteredTakeHome, y0, destDuringStudy, destAtGrad, ratio, v, finalNigeriaNGN, finalDestNGN, returneeAtGrad, returneeYear5){
     var safeRatio = isFinite(ratio) ? ratio : 0;
     var returneeRatio = returneeAtGrad.nairaNet / y0.nairaNet;
     var interpretation =
-      'Right now, as a ' + prof.label + ' in ' + cityLabel + ', you take home about ' + money(y0.nairaNet,'₦',false) + '/month. ' +
+      'Right now, as a ' + prof.label + ' in ' + cityLabel + ', your take-home pay is ' + money(enteredTakeHome,'₦',false) +
+      '/month — after modeled rent, that leaves about ' + money(y0.nairaNet,'₦',false) + '/month, which is what the comparison below is based on. ' +
       'A Master\'s in ' + dest.label + ' takes about ' + dest.studyMonths + ' — during that time, expect only modest part-time income, around ' +
       money(destDuringStudy.foreignNetLocal, dest.symbol, dest.suffix) + '/month. ' +
       'Once you graduate, a ' + prof.label + ' role there could pay around ' + money(destAtGrad.foreignNetLocal, dest.symbol, dest.suffix) +
-      '/month — about ' + Math.max(safeRatio,0).toFixed(1) + 'x your current take-home — growing toward roughly ' + money(finalDestNGN,'₦',false) +
+      '/month — about ' + Math.max(safeRatio,0).toFixed(1) + 'x what you take home after rent now — growing toward roughly ' + money(finalDestNGN,'₦',false) +
       '/month (₦-equivalent) by year 5. ' + v.sub + ' ' +
       'And if you come back to Nigeria after the Master\'s instead of staying in ' + dest.label + ', the qualification itself is usually worth a real premium here too — realistically around ' +
-      money(returneeAtGrad.nairaNet,'₦',false) + '/month in ' + cityLabel + ' right after you return (about ' + Math.max(returneeRatio,0).toFixed(1) + 'x your current take-home), ' +
+      money(returneeAtGrad.nairaNet,'₦',false) + '/month in ' + cityLabel + ' right after you return (about ' + Math.max(returneeRatio,0).toFixed(1) + 'x what you take home after rent now), ' +
       'growing toward roughly ' + money(returneeYear5.nairaNet,'₦',false) + '/month by year 5 — so the degree still pays off even if you don\'t stay abroad.';
     $('pathInterpretation').textContent = interpretation;
 
     var steps = [
-      { label: 'Now', detail: prof.label + ' in ' + cityLabel + ', earning ' + money(y0.nairaNet,'₦',false) + '/mo.' },
+      { label: 'Now', detail: prof.label + ' in ' + cityLabel + ', take-home ' + money(enteredTakeHome,'₦',false) + '/mo (about ' + money(y0.nairaNet,'₦',false) + '/mo after rent).' },
       { label: 'Apply & get admission', detail: 'TGM matches you to partner universities in ' + dest.label + '.' },
       { label: 'Study (' + dest.studyMonths + ')', detail: 'Limited part-time income only, around ' + money(destDuringStudy.foreignNetLocal, dest.symbol, dest.suffix) + '/mo.' },
       { label: 'Graduate', detail: 'Qualified and ready to work in ' + dest.label + ' — or back home.' },
@@ -599,7 +853,7 @@
     var params = new URLSearchParams();
     params.set('profession', lastCalc.prof.label);
     params.set('salary', ($('salary').value||'').replace(/,/g,''));
-    params.set('city', state.city);
+    params.set('city', $('city').value);
     params.set('dest', lastCalc.dest.id);
     var url = location.origin + location.pathname + '?' + params.toString();
     if(copy && navigator.clipboard){
@@ -619,7 +873,7 @@
     $('profession').value = params.get('profession') || '';
     var salary = params.get('salary');
     if(salary){ $('salary').value = Number(salary).toLocaleString('en-US'); }
-    var city = params.get('city'); if(city){ $('city').value = city; state.city = city; }
+    var city = params.get('city'); if(city){ $('city').value = city; }
     var dest = params.get('dest');
     if(dest){
       state.destination = dest;
@@ -666,7 +920,7 @@
       grade: $('leadGrade').value,
       profession: lastCalc ? lastCalc.prof.label : ($('profession').value || ''),
       destination: lastCalc ? lastCalc.dest.label : '',
-      city: DATA.cities[state.city] ? DATA.cities[state.city].label : state.city,
+      city: ($('city').value || '').trim(),
       salary: parseFloat(($('salary').value||'0').replace(/,/g,'')) || 0,
       score: lastCalc ? lastCalc.score : null,
       ratio: lastCalc ? Number(lastCalc.ratio.toFixed(2)) : null,
@@ -736,7 +990,7 @@
 
     ctx.fillStyle = muted;
     ctx.font = '500 22px "Plex Data"';
-    ctx.fillText((lastCalc.prof.label + ' · ' + DATA.cities[state.city].label + ' → ' + lastCalc.dest.label).toUpperCase(), 90, 240);
+    ctx.fillText((lastCalc.prof.label + ' · ' + lastCalc.city.label + ' → ' + lastCalc.dest.label).toUpperCase(), 90, 240);
 
     ctx.fillStyle = stamp;
     ctx.font = '600 128px "Plex Data"';
@@ -747,13 +1001,13 @@
 
     ctx.fillStyle = muted;
     ctx.font = '400 22px "Plex Body"';
-    wrapText(ctx, lastCalc.ratio.toFixed(1) + 'x career earning uplift after rent, tax and cost of living, vs ' + DATA.cities[state.city].label, 90, 565, W-180, 30);
+    wrapText(ctx, lastCalc.ratio.toFixed(1) + 'x career earning uplift after rent, tax and cost of living, vs ' + lastCalc.city.label, 90, 565, W-180, 30);
 
     ctx.strokeStyle = dark ? 'rgba(237,239,231,0.15)' : 'rgba(10,15,30,0.12)';
     ctx.beginPath(); ctx.moveTo(90,630); ctx.lineTo(W-90,630); ctx.stroke();
 
     ctx.fillStyle = muted; ctx.font = '600 18px "Plex Data"';
-    ctx.fillText('NET PAY · ' + DATA.cities[state.city].label.toUpperCase(), 90, 680);
+    ctx.fillText('NET PAY · ' + lastCalc.city.label.toUpperCase(), 90, 680);
     ctx.fillStyle = ink; ctx.font = '600 30px "Plex Data"';
     ctx.fillText('₦' + fmt(lastCalc.y0.nairaNet), 90, 720);
 

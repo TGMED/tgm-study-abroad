@@ -1,0 +1,32 @@
+{% extends "app_base.html" %}
+{% from "_avatar.html" import avatar %}
+{% block title %}Leaderboard — TGM{% endblock %}
+{% block page_title %}Leaderboard{% endblock %}
+{% block app_content %}
+<div class="pagehead">
+  <h1>Top contributors</h1>
+  <p>Ranked by upvotes received across the community — members who show up, answer questions, and get recognized for it.</p>
+</div>
+
+{% if contributors %}
+<div class="card lb-card">
+  <ol class="lb-list">
+    {% for c in contributors %}
+    <li class="lb-row {{ 'lb-top' if c.rank <= 3 }}">
+      <span class="lb-rank lb-rank-{{ c.rank }}">{{ c.rank }}</span>
+      <a class="lb-user" href="{{ url_for('social.profile', user_id=c.id) }}">
+        {{ avatar(c, 40) }}
+        <span class="lb-name">{{ c.name }}</span>
+      </a>
+      <span class="lb-stat"><b>{{ c.post_count }}</b> post{{ '' if c.post_count == 1 else 's' }}</span>
+      <span class="lb-score">▲ {{ c.total_score }}</span>
+    </li>
+    {% endfor %}
+  </ol>
+</div>
+{% else %}
+<div class="card lb-empty">
+  <p>No one's been recognized yet — upvote a helpful post in any community room to get this started.</p>
+</div>
+{% endif %}
+{% endblock %}
