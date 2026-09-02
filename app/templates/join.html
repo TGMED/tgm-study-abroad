@@ -7,20 +7,25 @@
   </header>
 
   <p class="eyebrow">One quick step</p>
-  <h1 class="hero" style="font-size:30px;">What should we call you?</h1>
-  <p class="dek">Pick a name to join the conversation. You'll be chatting with other students — and Amara, our AI counsellor — in seconds. No email needed.</p>
+  <h1 class="hero" style="font-size:30px;">What's your full name?</h1>
+  <p class="dek">Use your real full name and email to join the conversation. You'll be chatting with other students — and Amara, our AI counsellor — in seconds.</p>
 
   <div class="card counter">
     {% if error %}<p class="modal-error show" style="margin:-4px 0 14px;">{{ error }}</p>{% endif %}
     <form method="POST" action="{{ url_for('auth.join') }}">
       <input type="hidden" name="next" value="{{ next_url }}" />
       <div class="field">
-        <label for="name">Your name or nickname</label>
-        <input type="text" id="name" name="name" maxlength="40" placeholder="e.g. Ada, or Ada_Lagos" autocomplete="off" autofocus required />
+        <label for="name">Your full name</label>
+        <input type="text" id="name" name="name" maxlength="40" value="{{ name }}" placeholder="e.g. Ada Chukwu" autocomplete="name" autofocus required />
+      </div>
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" maxlength="120" value="{{ email }}" placeholder="you@email.com" autocomplete="email" required />
       </div>
       <button class="calc-btn" type="submit">Join the community →</button>
     </form>
     <p class="fx-badge" style="margin-top:14px;">Be kind. Posts are visible to everyone in the room.</p>
+    <p class="fx-badge" style="margin-top:8px;">Already a member? <a href="{{ url_for('auth.login', next=next_url) }}">Log in</a> instead.</p>
   </div>
 </div>
 {% endblock %}

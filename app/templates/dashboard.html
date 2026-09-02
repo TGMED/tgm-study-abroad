@@ -119,6 +119,12 @@
 
     <!-- Rail -->
     <aside class="dw-rail">
+      <section class="dw-card">
+        <div class="dw-card-head"><h2>ROI Calculator</h2></div>
+        <p class="dw-sub">See what studying abroad is worth for you, after rent, tax and cost of living — revisit it anytime as your numbers change.</p>
+        <a class="dw-btn-sm" href="{{ url_for('roi.index') }}">Open calculator →</a>
+      </section>
+
       {% if remaining %}
       <section class="dw-dark">
         <div class="dw-dark-head"><h2>{{ remaining|length }} step{{ '' if remaining|length == 1 else 's' }} left</h2><span>{{ completeness }}%</span></div>

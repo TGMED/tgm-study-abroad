@@ -149,8 +149,16 @@ def onboarding():
                headline = ?, avatar_path = ?, onboarded = 1 WHERE id = ?""",
             (user_type, location, destination, headline, avatar_path, row["id"]),
         )
+        # Everyone lands in #general first, then can join destination/other
+        # communities from there.
+        db.execute(
+            "INSERT OR IGNORE INTO room_members (student_id, room, joined_at) VALUES (?, 'general', ?)",
+            (row["id"], _now()),
+        )
         # Auto-join the community that matches their destination, if any.
         for rm in _rooms():
+            if rm["key"] == "general":
+                continue
             if rm["label"].lower() in destination.lower() or rm["key"] in destination.lower():
                 db.execute(
                     "INSERT OR IGNORE INTO room_members (student_id, room, joined_at) VALUES (?, ?, ?)",
@@ -158,7 +166,7 @@ def onboarding():
                 )
                 break
         db.commit()
-        return redirect(url_for("social.dashboard"))
+        return redirect(url_for("community.community_room", room="general"))
 
     return render_template("onboarding.html", error=None, form={}, rooms=_rooms())
 
@@ -354,6 +362,8 @@ def communities():
 def toggle_membership(room):
     if room not in COMMUNITY_ROOMS:
         abort(404)
+    if room == "general":
+        return jsonify({"ok": False, "error": "Everyone stays in #general."}), 400
     db = get_db()
     sid = session["student_id"]
     existing = db.execute(

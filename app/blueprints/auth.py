@@ -41,19 +41,36 @@ def join():
 
     if request.method == "POST":
         name = (request.form.get("name") or "").strip()[:40]
-        if len(name) < 2:
+        email = (request.form.get("email") or "").strip().lower()[:120]
+        # Require a first and last name -- not a single nickname -- so
+        # display names read as real people across the community.
+        name_parts = [p for p in name.split() if len(p) > 1]
+        if len(name_parts) < 2:
             return render_template(
-                "join.html", next_url=next_url, error="Please enter your name (at least 2 characters)."
+                "join.html", next_url=next_url, name=name, email=email,
+                error="Please enter your full name (first and last).",
+            )
+        if "@" not in email or "." not in email.split("@")[-1]:
+            return render_template(
+                "join.html", next_url=next_url, name=name, email=email,
+                error="Please enter a valid email address.",
             )
 
         db = get_db()
-        # Guests get a synthetic, unique email so the existing schema
-        # (email NOT NULL UNIQUE) is satisfied without collecting one.
+        existing = db.execute("SELECT id FROM students WHERE email = ?", (email,)).fetchone()
+        if existing is not None:
+            # Don't sign the submitter into someone else's account just
+            # because they typed a known email -- that's an unverified
+            # takeover. Send them to the OTP-verified /login flow instead.
+            return render_template(
+                "join.html", next_url=next_url, name=name, email=email,
+                error="That email already has an account -- log in instead.",
+            )
+
         now = datetime.datetime.utcnow().isoformat()
-        guest_email = f"guest-{secrets.token_hex(8)}@guest.local"
         cur = db.execute(
             "INSERT INTO students (email, display_name, created_at, last_seen_at) VALUES (?, ?, ?, ?)",
-            (guest_email, name, now, now),
+            (email, name, now, now),
         )
         db.commit()
 
@@ -61,7 +78,7 @@ def join():
         session.permanent = True
         return redirect(next_url)
 
-    return render_template("join.html", next_url=next_url, error=None)
+    return render_template("join.html", next_url=next_url, error=None, name="", email="")
 
 
 @auth_bp.route("/api/auth/request-otp", methods=["POST"])

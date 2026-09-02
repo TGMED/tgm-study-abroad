@@ -192,7 +192,7 @@ def api_chat_poll():
     since = request.args.get("since", type=int, default=0)
     db = get_db()
     rows = db.execute(
-        "SELECT id, role, content FROM chat_messages WHERE student_id = ? AND id > ? ORDER BY id ASC",
+        "SELECT id, role, content FROM chat_messages WHERE student_id = ? AND id > ? AND role != 'user' ORDER BY id ASC",
         (student_id, since),
     ).fetchall()
     mode_row = db.execute("SELECT chat_mode FROM students WHERE id = ?", (student_id,)).fetchone()

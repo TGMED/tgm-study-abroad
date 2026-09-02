@@ -331,6 +331,15 @@ def _init_db_postgres():
         );
         """
     )
+    # #general was introduced after some students had already onboarded --
+    # backfill them in, since every member is expected to land there.
+    cur.execute(
+        """
+        INSERT INTO room_members (student_id, room, joined_at)
+        SELECT id, 'general', NOW()::TEXT FROM students WHERE onboarded = 1
+        ON CONFLICT (student_id, room) DO NOTHING
+        """
+    )
     conn.commit()
     cur.close()
     conn.close()
@@ -486,5 +495,14 @@ def _init_db_sqlite():
     dm_columns = {row[1] for row in conn.execute("PRAGMA table_info(direct_messages)")}
     if "shared_post_id" not in dm_columns:
         conn.execute("ALTER TABLE direct_messages ADD COLUMN shared_post_id INTEGER")
+
+    # #general was introduced after some students had already onboarded --
+    # backfill them in, since every member is expected to land there.
+    conn.execute(
+        """
+        INSERT OR IGNORE INTO room_members (student_id, room, joined_at)
+        SELECT id, 'general', datetime('now') FROM students WHERE onboarded = 1
+        """
+    )
     conn.commit()
     conn.close()

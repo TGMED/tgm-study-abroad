@@ -305,22 +305,6 @@
     if(state.calculated) runCalculation();
   }).catch(function(){ refreshFxBadge(); });
 
-  // ---------- populate professions ----------
-  var professionList = $('professions');
-  DATA.professions.forEach(function(p){
-    var opt = document.createElement('option');
-    opt.value = p.label;
-    professionList.appendChild(opt);
-  });
-
-  // ---------- populate cities ----------
-  var cityList = $('cities');
-  Object.keys(DATA.cities).forEach(function(key){
-    var opt = document.createElement('option');
-    opt.value = DATA.cities[key].label;
-    cityList.appendChild(opt);
-  });
-
   // ---------- destination chips ----------
   var destWrap = $('destinations');
   DATA.destinations.forEach(function(d){

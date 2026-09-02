@@ -13,10 +13,11 @@ actual conversation.
 
 from services.knowledge_supplement import get_knowledge_supplement_block
 
-COMMUNITY_ROOMS = ("uk", "canada", "ireland", "usa", "poland", "germany", "australia")
+COMMUNITY_ROOMS = ("general", "uk", "canada", "ireland", "usa", "poland", "germany", "australia")
 
 # Display metadata for each community room (label + country-code badge).
 COMMUNITY_ROOM_META = {
+    "general": {"label": "General", "code": "★", "blurb": "Say hello & meet the whole community, whatever your destination"},
     "uk": {"label": "United Kingdom", "code": "GB", "blurb": "Students & pros across the UK"},
     "canada": {"label": "Canada", "code": "CA", "blurb": "PGWP, PR routes & campus life"},
     "ireland": {"label": "Ireland", "code": "IE", "blurb": "EU tech hub & English-taught study"},
