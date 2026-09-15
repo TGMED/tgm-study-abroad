@@ -15,6 +15,7 @@
     <a class="{{ 'on' if ep in ('admin.admin_inbox','admin.admin_inbox_chat') }}" href="{{ url_for('admin.admin_inbox') }}">Inbox{% if open_handoffs %} <em>{{ open_handoffs }}</em>{% endif %}</a>
     <a class="{{ 'on' if ep == 'admin.admin_community' }}" href="{{ url_for('admin.admin_community') }}">Moderation{% if open_reports %} <em>{{ open_reports }}</em>{% endif %}</a>
     <a class="{{ 'on' if ep == 'admin.admin_leads' }}" href="{{ url_for('admin.admin_leads') }}">Leads</a>
+    <a class="{{ 'on' if ep == 'admin.admin_counselors' }}" href="{{ url_for('admin.admin_counselors') }}">Counselors</a>
   </nav>
   <a class="a-site" href="{{ url_for('roi.home') }}">View site →</a>
 </header>

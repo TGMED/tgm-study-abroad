@@ -1,6 +1,17 @@
+import sys
+
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# Some consoles (namely Windows' default cp1252 one) can't encode emoji --
+# the app prints student/AI-authored content to stdout in a few console-
+# fallback paths (unconfigured EmailJS/WhatsApp credentials, dev logging),
+# and any of those containing an emoji would otherwise crash the request
+# with UnicodeEncodeError instead of just logging oddly.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
 
 from flask import Flask  # noqa: E402
 
@@ -11,6 +22,10 @@ from blueprints.chat import chat_bp  # noqa: E402
 from blueprints.community import community_bp  # noqa: E402
 from blueprints.social import social_bp  # noqa: E402
 from blueprints.admin import admin_bp  # noqa: E402
+from blueprints.whatsapp import whatsapp_bp  # noqa: E402
+from blueprints.counselors import counselors_bp  # noqa: E402
+from blueprints.counselor_auth import counselor_auth_bp  # noqa: E402
+from blueprints.counselor_portal import counselor_portal_bp  # noqa: E402
 
 
 def create_app():
@@ -27,6 +42,10 @@ def create_app():
     app.register_blueprint(community_bp)
     app.register_blueprint(social_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(whatsapp_bp)
+    app.register_blueprint(counselors_bp)
+    app.register_blueprint(counselor_auth_bp)
+    app.register_blueprint(counselor_portal_bp)
 
     return app
 

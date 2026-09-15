@@ -1,11 +1,15 @@
 import datetime
 import os
+import secrets
 
 from flask import Blueprint, abort, jsonify, redirect, render_template, request, url_for
+from werkzeug.security import generate_password_hash
 
 from extensions import get_db, requires_admin_auth
 from blueprints.roi import GOOGLE_FORM_ACTION_URL, HUBSPOT_ACCESS_TOKEN
+from services.digest import send_weekly_digest
 from services.prompts import COMMUNITY_ROOM_META
+from services.whatsapp import WhatsAppSendError, send_text_message
 
 admin_bp = Blueprint("admin", __name__)
 
@@ -125,6 +129,18 @@ def admin_members():
         "frozen": sum(1 for m in members if m["is_banned"]),
     }
     return render_template("admin_members.html", members=members, totals=totals)
+
+
+@admin_bp.route("/admin/digest/send", methods=["POST"])
+@requires_admin_auth
+def admin_send_digest():
+    db = get_db()
+    sent, skipped, highlights = send_weekly_digest(db, url_for("social.communities", _external=True))
+    if not highlights:
+        msg = "no-activity"
+    else:
+        msg = f"sent-{sent}-skipped-{skipped}"
+    return redirect(url_for("admin.admin_members", digest=msg))
 
 
 @admin_bp.route("/admin/members/<int:sid>")
@@ -318,6 +334,13 @@ def admin_inbox_takeover(sid):
         (sid, "🟢 A TGM counsellor has joined the chat.", _now()),
     )
     db.commit()
+
+    student = db.execute("SELECT phone FROM students WHERE id = ?", (sid,)).fetchone()
+    if student and student["phone"]:
+        try:
+            send_text_message(student["phone"], "🟢 A TGM counsellor has joined the chat.")
+        except WhatsAppSendError as exc:
+            print(f"WhatsApp: takeover notice send failed for student {sid}: {exc}")
     return jsonify({"ok": True})
 
 
@@ -334,6 +357,16 @@ def admin_inbox_reply(sid):
         (sid, content, _now()),
     )
     db.commit()
+
+    # A web student picks this up via polling; a WhatsApp student only ever
+    # sees it if we actively push it back out over the Cloud API.
+    student = db.execute("SELECT phone FROM students WHERE id = ?", (sid,)).fetchone()
+    if student and student["phone"]:
+        try:
+            send_text_message(student["phone"], content)
+        except WhatsAppSendError as exc:
+            print(f"WhatsApp: counsellor reply send failed for student {sid}: {exc}")
+
     return jsonify({"ok": True, "id": cur.lastrowid})
 
 
@@ -402,3 +435,59 @@ def dismiss_reports(post_id):
     if request.is_json:
         return jsonify({"ok": True})
     return redirect(request.referrer or url_for("admin.admin_community"))
+
+
+# ---------------------------------------------------------------------------
+# Counselors -- separate from the shared /admin login itself: each counselor
+# gets their own account (extensions.counselor_login_required) so they only
+# ever see conversations students sent to them specifically (blueprints/
+# counselor_portal.py). Provisioning stays admin-only, no self-signup.
+# ---------------------------------------------------------------------------
+@admin_bp.route("/admin/counselors", methods=["GET", "POST"])
+@requires_admin_auth
+def admin_counselors():
+    db = get_db()
+    error = None
+    created_password = None
+
+    if request.method == "POST":
+        full_name = (request.form.get("full_name") or "").strip()[:80]
+        email = (request.form.get("email") or "").strip().lower()[:120]
+        headline = (request.form.get("headline") or "").strip()[:160]
+
+        if len(full_name) < 2:
+            error = "Please enter the counselor's name."
+        elif "@" not in email or "." not in email.split("@")[-1]:
+            error = "Please enter a valid email address."
+        elif db.execute("SELECT id FROM counselors WHERE email = ?", (email,)).fetchone():
+            error = "A counselor with that email already exists."
+        else:
+            # Generated rather than asked for -- an admin creating an
+            # account on someone else's behalf shouldn't be the one setting
+            # (and therefore knowing) their password; shown once here so it
+            # can be handed to the counselor to change after first login.
+            created_password = secrets.token_urlsafe(9)
+            db.execute(
+                """
+                INSERT INTO counselors (full_name, email, password_hash, headline, is_active, created_at)
+                VALUES (?, ?, ?, ?, 1, ?)
+                """,
+                (full_name, email, generate_password_hash(created_password), headline, _now()),
+            )
+            db.commit()
+
+    counselors = db.execute("SELECT * FROM counselors ORDER BY created_at DESC").fetchall()
+    return render_template(
+        "admin_counselors.html", counselors=counselors, error=error, created_password=created_password,
+    )
+
+
+@admin_bp.route("/admin/counselors/<int:counselor_id>/toggle", methods=["POST"])
+@requires_admin_auth
+def toggle_counselor(counselor_id):
+    db = get_db()
+    row = db.execute("SELECT is_active FROM counselors WHERE id = ?", (counselor_id,)).fetchone()
+    if row:
+        db.execute("UPDATE counselors SET is_active = ? WHERE id = ?", (0 if row["is_active"] else 1, counselor_id))
+        db.commit()
+    return redirect(url_for("admin.admin_counselors"))

@@ -286,6 +286,10 @@ def home():
 
 @roi_bp.route("/calculator")
 def index():
+    # Logged-in members get the calculator inside the app shell (sidebar +
+    # nav intact); logged-out visitors get the standalone marketing page.
+    if session.get("student_id"):
+        return render_template("calculator_app.html")
     return render_template("index.html")
 
 
@@ -344,9 +348,17 @@ def api_leads():
         redirect_to = "/chat"
     else:
         # Known email returning: don't silently log in from an unauthenticated
-        # POST (anyone could type someone else's email otherwise) -- send them
-        # through the OTP challenge instead.
-        redirect_to = f"/login?email={quote(email)}&next=/chat"
+        # POST (anyone could type someone else's email otherwise) -- send
+        # them to authenticate first. Most leads captured here only exist via
+        # this frictionless flow and were never asked to set a password, so
+        # check that before sending them to a login form they can't pass --
+        # straight to "forgot password" (which doubles as "set a password
+        # for the first time") instead of a dead end.
+        has_password = db.execute(
+            "SELECT password_hash FROM students WHERE id = ?", (student_id,)
+        ).fetchone()["password_hash"]
+        target = "login" if has_password else "forgot-password"
+        redirect_to = f"/{target}?email={quote(email)}&next=/chat"
 
     return jsonify({
         "ok": True,

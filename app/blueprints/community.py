@@ -4,6 +4,7 @@ import re
 from flask import Blueprint, abort, jsonify, redirect, render_template, request, session, url_for
 
 from extensions import get_db, login_required
+from services.emailer import EmailSendError, send_reply_notification_email
 from services.gemini import GeminiError, call_gemini
 from services.prompts import COMMUNITY_ROOMS, COMMUNITY_ROOM_META, build_community_system_prompt
 
@@ -115,16 +116,20 @@ def community_room(room):
         "SELECT COALESCE(MAX(id), 0) AS m FROM community_posts WHERE room = ?", (room,)
     ).fetchone()["m"]
 
-    room_label = COMMUNITY_ROOM_META.get(room, {}).get("label", room.title())
+    room_meta = COMMUNITY_ROOM_META.get(room, {})
+    room_label = room_meta.get("label", room.title())
     member_count = db.execute(
         "SELECT COUNT(*) AS c FROM room_members WHERE room = ?", (room,)
+    ).fetchone()["c"]
+    post_count = db.execute(
+        "SELECT COUNT(*) AS c FROM community_posts WHERE room = ? AND is_hidden = 0", (room,)
     ).fetchone()["c"]
     joined = db.execute(
         "SELECT 1 FROM room_members WHERE room = ? AND student_id = ?", (room, session["student_id"])
     ).fetchone() is not None
     return render_template(
-        "community_room.html", room=room, room_label=room_label, thread=thread,
-        last_id=last_id, member_count=member_count, joined=joined,
+        "community_room.html", room=room, room_label=room_label, room_blurb=room_meta.get("blurb", ""),
+        thread=thread, last_id=last_id, member_count=member_count, post_count=post_count, joined=joined,
     )
 
 
@@ -139,6 +144,35 @@ def api_list_posts(room):
         (session["student_id"], room, since),
     ).fetchall()
     return jsonify({"ok": True, "posts": [_post_dict(r) for r in rows]})
+
+
+def _notify_reply(db, parent_id, replier_id, replier_label, room, reply_content):
+    """Emails the parent post's author that someone replied -- skipped if
+    they're replying to themselves, to an AI post, or to a post whose author
+    account has since been deleted. Best-effort: a failed/unconfigured send
+    never blocks the reply itself from posting."""
+    parent = db.execute(
+        """
+        SELECT p.student_id, p.content AS post_content, s.email, s.display_name
+        FROM community_posts p LEFT JOIN students s ON s.id = p.student_id
+        WHERE p.id = ?
+        """,
+        (parent_id,),
+    ).fetchone()
+    if not parent or not parent["student_id"] or not parent["email"] or parent["student_id"] == replier_id:
+        return
+    room_label = COMMUNITY_ROOM_META.get(room, {}).get("label", room.title())
+    try:
+        send_reply_notification_email(parent["email"], {
+            "to_name": parent["display_name"] or parent["email"].split("@")[0],
+            "replier_name": replier_label,
+            "room_label": room_label,
+            "post_excerpt": (parent["post_content"] or "")[:200],
+            "reply_excerpt": reply_content[:200],
+            "post_url": url_for("community.community_room", room=room, _external=True),
+        })
+    except EmailSendError as exc:
+        print(f"Reply notification email failed: {exc}")
 
 
 @community_bp.route("/api/community/<room>/posts", methods=["POST"])
@@ -173,6 +207,9 @@ def api_create_post(room):
     )
     post_id = cur.lastrowid
     db.commit()
+
+    if parent_id:
+        _notify_reply(db, parent_id, replier_id=student_id, replier_label=author_label, room=room, reply_content=content)
 
     ai_reply_row = None
     if MENTION_RE.search(content):

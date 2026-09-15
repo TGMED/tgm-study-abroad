@@ -1,0 +1,30 @@
+{% extends "app_base.html" %}
+{% block title %}Counselors — TGM{% endblock %}
+{% block page_title %}Counselors{% endblock %}
+{% block app_content %}
+<div class="pagehead">
+  <h1>Message a TGM counselor</h1>
+  <p>Pick anyone from our team and start chatting directly — no forms, no waiting in a queue.</p>
+</div>
+
+<div class="rooms-grid">
+  {% for c in counselors %}
+  <div class="card room-card">
+    <div class="rc-top">
+      <span class="codeflag">{{ c.initials }}</span>
+      <div>
+        <h3>{{ c.full_name }}</h3>
+        {% if c.headline %}<p style="margin:2px 0 0;font-size:12.5px;color:var(--muted);">{{ c.headline }}</p>{% endif %}
+      </div>
+    </div>
+    <div class="rc-actions">
+      <a class="btn btn-primary" style="flex:1;justify-content:center;" href="{{ url_for('counselors.chat_page', counselor_id=c.id) }}">
+        {{ 'Continue chat' if c.message_count else 'Message' }}
+      </a>
+    </div>
+  </div>
+  {% else %}
+  <div class="empty">No counselors are available to message right now.</div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "app_base.html" %}
+{% block title %}ROI Calculator — TGM{% endblock %}
+{% block page_title %}ROI Calculator{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/roi-calc-embed.css') }}" />
+{% endblock %}
+{% block app_content %}
+<div class="roi-calc">
+{% include "_calculator_body.html" %}
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% endblock %}

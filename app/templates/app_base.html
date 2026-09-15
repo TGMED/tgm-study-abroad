@@ -21,10 +21,24 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>
         <span>Dashboard</span>
       </a>
-      <a href="{{ url_for('social.communities') }}" class="{{ 'on' if ep in ('social.communities','community.community_room') }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-        <span>Communities</span>
-      </a>
+      <div class="side-group-head">
+        <a href="{{ url_for('community.community_room', room='general') }}" class="{{ 'on' if ep in ('social.communities','community.community_room') }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+          <span>Communities</span>
+        </a>
+        {% if ep in ('social.communities','community.community_room') %}
+        <button type="button" class="side-chevron" id="sideChevron" aria-label="Collapse channel list">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        {% endif %}
+      </div>
+      {% if ep in ('social.communities','community.community_room') %}
+      <div class="side-sub" id="sideSub">
+        {% for r in nav_rooms %}
+        <a href="{{ url_for('community.community_room', room=r.key) }}" class="{{ 'on' if ep == 'community.community_room' and request.view_args.get('room') == r.key }}">#{{ r.label }}</a>
+        {% endfor %}
+      </div>
+      {% endif %}
       <a href="{{ url_for('social.leaderboard') }}" class="{{ 'on' if ep == 'social.leaderboard' }}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M7 6H4a2 2 0 0 0 2 4M17 6h3a2 2 0 0 1-2 4"/></svg>
         <span>Leaderboard</span>
@@ -40,6 +54,10 @@
       <a href="{{ url_for('chat.chat_page') }}" class="{{ 'on' if ep == 'chat.chat_page' }}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3l2.1 4.7L19 9l-3.6 3.3.9 4.9L12 15l-4.3 2.2.9-4.9L5 9l4.9-1.3z"/></svg>
         <span>Amara AI</span>
+      </a>
+      <a href="{{ url_for('counselors.directory') }}" class="{{ 'on' if ep in ('counselors.directory','counselors.chat_page') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>Counselors</span>
       </a>
     </nav>
 
@@ -90,6 +108,24 @@ window.tgmToast = function (msg, ok) {
   clearTimeout(window.__ttId);
   window.__ttId = setTimeout(function () { t.className = 'toast'; }, 2600);
 };
+{% set notice = request.args.get('notice') %}
+{% if notice %}
+window.tgmToast({{ notice|tojson }}, {{ (request.args.get('notice_type') != 'error')|tojson }});
+{% endif %}
+(function () {
+  var chevron = document.getElementById('sideChevron');
+  var sub = document.getElementById('sideSub');
+  if (!chevron || !sub) return;
+  // Always starts expanded (arrow down) on every page landed on -- this is
+  // a per-view convenience toggle only, not a remembered preference, so
+  // clicking into Communities never surprises you with the list hidden.
+  var collapsed = false;
+  chevron.addEventListener('click', function () {
+    collapsed = !collapsed;
+    chevron.classList.toggle('collapsed', collapsed);
+    sub.classList.toggle('collapsed', collapsed);
+  });
+})();
 </script>
 {% block extra_scripts %}{% endblock %}
 </body>

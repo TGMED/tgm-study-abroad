@@ -1,0 +1,33 @@
+{% extends "app_base.html" %}
+{% block title %}{{ counselor.full_name }} — TGM{% endblock %}
+{% block page_title %}Counselors{% endblock %}
+{% block back %}<a class="backbtn" href="{{ url_for('counselors.directory') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>Back</a>{% endblock %}
+{% block app_content %}
+<div class="amara-wrap">
+  <div class="amara-head">
+    <span class="amara-badge">{{ counselor.initials }}</span>
+    <div>
+      <b>{{ counselor.full_name }}</b>
+      <small>TGM Counsellor{% if counselor.headline %} · {{ counselor.headline }}{% endif %}</small>
+    </div>
+  </div>
+
+  <div class="chat-window" id="chatWindow" data-last-id="{{ last_id }}" data-counselor-id="{{ counselor.id }}">
+    {% if not messages %}
+    <div class="chat-system">Send {{ counselor.full_name.split(' ')[0] }} a message to start the conversation.</div>
+    {% endif %}
+    {% for m in messages %}
+    <div class="chat-bubble {{ 'chat-user' if m.sender_type == 'student' else 'chat-counsellor' }}">{{ m.content }}</div>
+    {% endfor %}
+  </div>
+  <p class="chat-error" id="chatError" style="display:none;"></p>
+
+  <div class="chat-composer">
+    <input id="chatInput" placeholder="Message {{ counselor.full_name.split(' ')[0] }}…" autocomplete="off" />
+    <button id="chatSendBtn">Send</button>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/counselor_dm.js') }}"></script>
+{% endblock %}

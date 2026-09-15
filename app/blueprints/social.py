@@ -140,9 +140,10 @@ def onboarding():
 
         # Avatar is optional -- profile/post rendering already falls back to
         # initials (see templates/_avatar.html) when avatar_path is empty, so
-        # there's nothing this blocks on; _save_avatar returning None (no
-        # file, wrong extension, or over the size limit) just leaves it unset.
-        avatar_path = _save_avatar(row["id"], request.files.get("avatar"))
+        # a rejected photo (no file, wrong extension, over the size limit)
+        # doesn't block signup, just leaves it unset (with a heads-up toast
+        # below instead of silently dropping it).
+        avatar_path, avatar_error = _save_avatar(row["id"], request.files.get("avatar"))
 
         db.execute(
             """UPDATE students SET user_type = ?, location = ?, destination = ?,
@@ -166,25 +167,31 @@ def onboarding():
                 )
                 break
         db.commit()
+        if avatar_error:
+            return redirect(url_for("community.community_room", room="general", notice=avatar_error, notice_type="error"))
         return redirect(url_for("community.community_room", room="general"))
 
     return render_template("onboarding.html", error=None, form={}, rooms=_rooms())
 
 
 def _save_avatar(student_id, file_storage):
+    """Returns (filename_or_None, error_or_None). A rejection (bad type, too
+    large) used to just silently keep the old avatar with zero feedback --
+    now the caller gets a reason it can actually show the student, e.g. a
+    HEIC photo (the iPhone default format) isn't in ALLOWED_EXT."""
     if not file_storage or not file_storage.filename:
-        return None
+        return None, None
     ext = os.path.splitext(file_storage.filename)[1].lower()
     if ext not in ALLOWED_EXT:
-        return None
+        return None, f"\"{ext or 'that file'}\" isn't a supported image type -- use JPG, PNG, WEBP or GIF."
     os.makedirs(UPLOAD_DIR, exist_ok=True)
     fname = f"avatar_{student_id}{ext}"
     path = os.path.join(UPLOAD_DIR, fname)
     file_storage.save(path)
     if os.path.getsize(path) > MAX_AVATAR_BYTES:
         os.remove(path)
-        return None
-    return fname
+        return None, "That image is over the 5 MB limit -- try a smaller one."
+    return fname, None
 
 
 @social_bp.route("/media/avatar/<int:user_id>")
@@ -339,22 +346,12 @@ def dashboard():
 @social_bp.route("/community")
 @login_required
 def communities():
-    db = get_db()
-    sid = session["student_id"]
-    joined = {r["room"] for r in db.execute(
-        "SELECT room FROM room_members WHERE student_id = ?", (sid,)
-    ).fetchall()}
-    rooms = []
-    for rm in _rooms():
-        counts = db.execute(
-            "SELECT COUNT(*) AS c FROM community_posts WHERE room = ? AND is_hidden = 0",
-            (rm["key"],),
-        ).fetchone()["c"]
-        members = db.execute(
-            "SELECT COUNT(*) AS c FROM room_members WHERE room = ?", (rm["key"],)
-        ).fetchone()["c"]
-        rooms.append({**rm, "joined": rm["key"] in joined, "posts": counts, "members": members})
-    return render_template("communities.html", rooms=rooms)
+    # The standalone room-picker grid is gone -- every link that used to
+    # point here (nav, dashboard, home page, etc.) now lands straight in
+    # #general instead. The sidebar's own channel list (app_base.html) plus
+    # each room's own Join button already cover browsing/joining other
+    # rooms, so nothing is lost by not having a separate index page.
+    return redirect(url_for("community.community_room", room="general"))
 
 
 @social_bp.route("/api/community/<room>/membership", methods=["POST"])
@@ -426,7 +423,8 @@ def settings():
         study = _parse_history(request.form, "study")
         work = _parse_history(request.form, "work")
 
-        avatar_path = _save_avatar(row["id"], request.files.get("avatar")) or row["avatar_path"]
+        new_avatar_path, avatar_error = _save_avatar(row["id"], request.files.get("avatar"))
+        avatar_path = new_avatar_path or row["avatar_path"]
 
         db.execute(
             """UPDATE students SET display_name = ?, user_type = ?, location = ?, destination = ?,
@@ -435,6 +433,12 @@ def settings():
              json.dumps(study), json.dumps(work), avatar_path, row["id"]),
         )
         db.commit()
+        if avatar_error:
+            # The rest of the form still saved -- only the photo was
+            # rejected, so send them right back here (not to their profile)
+            # with the reason shown, instead of leaving them to wonder why
+            # their photo never appeared.
+            return render_template("settings.html", prof=profile_dict(current_student(db)), avatar_error=avatar_error)
         return redirect(url_for("social.profile", user_id=row["id"]))
 
     return render_template("settings.html", prof=profile_dict(row))

@@ -1,0 +1,196 @@
+<div class="site">
+
+  <header class="masthead">
+    <div class="wordmark">GLOBAL EDUCATION <span class="flip">ROI</span></div>
+    <div class="byline">Global education.<br/>Smart investment. — <b>TGM</b></div>
+  </header>
+
+  <p class="eyebrow">60-second smart-investment check</p>
+  <h1 class="hero">Is studying abroad a smart investment for you?</h1>
+  <p class="dek">Tell us your job, your pay, your city — we'll show what an international qualification is actually worth, after rent, tax and cost of living, in five real study destinations.</p>
+
+  <div class="card counter">
+    <p class="gate-label"><span class="n">1</span>Your details</p>
+
+    <div class="field">
+      <label for="profession">Profession</label>
+      <input type="text" id="profession" placeholder="Type your profession, e.g. Software Engineer" autocomplete="off" />
+    </div>
+
+    <div class="row2">
+      <div class="field naira-input">
+        <label for="salary">Monthly take-home pay</label>
+        <span class="prefix">₦</span>
+        <input id="salary" inputmode="numeric" placeholder="600,000" />
+      </div>
+      <div class="field">
+        <label for="city">City</label>
+        <input type="text" id="city" placeholder="Type your city, e.g. Lagos, Abuja, Port Harcourt…" autocomplete="off" />
+      </div>
+    </div>
+
+    <p class="gate-label" style="margin-top:18px;"><span class="n">2</span>Study destination</p>
+    <div class="destinations" id="destinations"></div>
+
+    <button class="calc-btn" id="calcBtn" disabled>Get my ROI Score →</button>
+    <p class="fx-badge" id="fxBadge"><span class="dot"></span><span id="fxBadgeText">Checking live exchange rates…</span></p>
+  </div>
+
+  <section id="results">
+
+    <div class="boardingpass" id="boardingpass">
+      <div class="bp-main">
+        <div class="bp-route">
+          <span class="city" id="bpFrom">LOS</span>
+          <span class="plane">✈</span>
+          <span class="city" id="bpTo">LON</span>
+          <span id="bpProfession"></span>
+        </div>
+        <div class="k" style="margin-bottom:4px;">ROI Score</div>
+        <h2 class="bp-verdict" id="bpVerdict">—</h2>
+        <p class="bp-sub" id="bpSub">—</p>
+        <p class="chart-note" id="estimateNote"></p>
+        <div class="bp-figures">
+          <div class="bp-figure">
+            <div class="k" id="bpNairaLabel">Left after rent</div>
+            <div class="v num" id="bpNaira">—</div>
+          </div>
+          <div class="bp-figure">
+            <div class="k" id="bpForeignLabel">Left after rent, post-Master's</div>
+            <div class="v num" id="bpForeign">—</div>
+          </div>
+        </div>
+        <div class="bp-multiplier">
+          <span class="x num" id="bpMultiplier">—</span>
+          <span class="label">career earning uplift after rent, tax &amp; cost of living</span>
+        </div>
+
+        <div class="family-panel" id="familyPanel">
+          <label><input type="checkbox" id="famSpouse"/> Include spouse/partner</label>
+          <div class="stepper">
+            <button type="button" id="famMinus">–</button>
+            <span id="famCount">0</span>
+            <button type="button" id="famPlus">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="bp-stub">
+        <div class="visa-meter">
+          <div class="vk">Study visa difficulty</div>
+          <div class="visa-bars" id="visaBars"></div>
+          <div class="visa-note" id="visaNote">—</div>
+        </div>
+        <div class="family-toggle">
+          <button type="button" id="familyToggleBtn">+ Bringing dependents?</button>
+        </div>
+        <div class="bp-barcode"></div>
+      </div>
+    </div>
+
+    <div class="bp-actions">
+      <button id="downloadBtn">⬇ Save report</button>
+      <button id="shareBtn">🔗 Share result</button>
+    </div>
+
+    <div class="card chartcard">
+      <div class="chartcard-head">
+        <div>
+          <h3>Your 5-year trajectory</h3>
+          <p class="sub" id="chartSub">Year-one pay rarely tells the real story — the growth curve after your qualification does.</p>
+        </div>
+        <div class="chart-view-toggle" id="chartViewToggle">
+          <button type="button" class="active" data-view="value">₦ Value</button>
+          <button type="button" data-view="growth">% Growth</button>
+        </div>
+      </div>
+      <div class="legend">
+        <span class="item"><span class="sw" style="background:var(--series-nigeria)"></span><span id="legendNigeria">Without further study</span></span>
+        <span class="item"><span class="sw" style="background:var(--series-dest)"></span><span id="legendDest">With a Master's abroad</span></span>
+      </div>
+      <p class="chart-note" id="growthDisabledNote"></p>
+      <div class="chart-wrap" id="chartWrap">
+        <svg id="chartSvg" width="100%" viewBox="0 0 560 236" preserveAspectRatio="none" style="display:block; overflow:visible;"></svg>
+        <div class="chart-tooltip" id="chartTooltip"></div>
+      </div>
+      <button class="table-toggle" id="tableToggle">View as table</button>
+      <table class="datatable" id="dataTable">
+        <thead><tr><th>Year</th><th id="thNigeria">Without study (₦/mo)</th><th id="thDest">With Master's (₦-equiv/mo)</th></tr></thead>
+        <tbody id="dataTableBody"></tbody>
+      </table>
+    </div>
+
+    <div class="card pathcard">
+      <h3>Your path, step by step</h3>
+      <p class="path-interpretation" id="pathInterpretation">—</p>
+      <ol class="path-steps" id="pathSteps"></ol>
+    </div>
+
+    <div class="pivot">
+      <p class="eyebrow">The fastest way to this score</p>
+      <h3 id="pivotHeadline">Ready to unlock this abroad?</h3>
+      <p id="pivotBody">A Master's at one of TGM's 12 partner universities can get you there — a real admission pathway, not just a plan.</p>
+      <button class="pivot-btn" id="pivotBtn">See matching programmes →</button>
+    </div>
+
+    <div class="card" style="padding:16px 18px; margin-bottom:22px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
+      <div>
+        <div style="font-weight:600; font-size:13.5px;">Compare with a friend</div>
+        <div style="font-size:12px; color:var(--text-secondary);">Send them this exact comparison, prefilled.</div>
+      </div>
+      <button id="copyLinkBtn" style="white-space:nowrap; padding:10px 14px; border-radius:9px; border:1px solid var(--line-strong); background:var(--surface-sunken); color:var(--text-primary); font-size:12.5px; font-weight:600; cursor:pointer;">Copy link</button>
+    </div>
+
+  </section>
+
+  <footer>
+    <p><b>Methodology:</b> exchange rates are live, fetched server-side and cached (see the badge above). The "Monthly salary" you enter is treated as take-home pay (already net of Nigerian tax) — it's deducted only for modeled Lagos/Abuja/Port Harcourt rent (capped at 40% of that take-home, since a real market rent charged flat would crush lower incomes unrealistically), not taxed again. Destination salary, tax and rent figures are a research snapshot (Aug 2026) sourced from official statistics bodies and tax authorities where available — UK: ONS/gov.uk/HMRC; Canada: Job Bank Canada (StatCan), CRA, CMHC; Germany: Entgeltatlas (Bundesagentur für Arbeit), destatis, BMF; Poland: GUS, Ministry of Finance, ZUS; Ireland: CSO, Revenue.ie, RTB. Nigeria rent uses real-estate market reports since no official NBS rent index exists. Study-phase housing costs use shared/dormitory accommodation figures (Studierendenwerk, SpareRoom, Rentals.ca, etc.), not the full post-graduation market rent. A few figures have no government-published occupation-level breakdown and use a named recruitment-market salary survey instead (e.g. Morgan McKinley for several Ireland roles); the returnee-qualification wage premium uses non-Nigeria-specific research (Egypt/West Africa) since no Nigeria-specific study was found. Destination tax calculations use simplified bracket models and omit some credits/allowances. Treat every figure as directional, not exact — this is a snapshot that should be refreshed periodically as tax bands and wages change.</p>
+    <p>© TGM · Global Education ROI is a study-abroad investment-planning tool for TGM's counselling pipeline, not financial or immigration advice. Destination pay figures assume completion of an international qualification via a study route, not direct work migration.</p>
+  </footer>
+
+</div>
+
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <button class="modal-close" id="modalClose">✕</button>
+    <div class="modal-form" id="modalForm">
+      <h4>See your matching programmes</h4>
+      <p>We'll match your background against 12 partner universities for this destination and send options to your inbox.</p>
+      <p class="modal-error" id="modalError"></p>
+      <div class="field">
+        <label for="leadEmail">Email</label>
+        <input type="email" id="leadEmail" placeholder="you@email.com" />
+      </div>
+      <div class="field">
+        <label for="leadQual">Highest qualification</label>
+        <select id="leadQual">
+          <option value="bsc">Bachelor's degree</option>
+          <option value="hnd">HND</option>
+          <option value="msc">Master's degree</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="leadGrade">Grade / class of degree</label>
+        <select id="leadGrade">
+          <option value="">Select…</option>
+          <option value="first">First Class</option>
+          <option value="2:1">Second Class Upper (2:1)</option>
+          <option value="2:2">Second Class Lower (2:2)</option>
+          <option value="third">Third Class</option>
+          <option value="pass">Pass</option>
+          <option value="hnd_upper">HND Upper Credit</option>
+          <option value="hnd_lower">HND Lower Credit</option>
+          <option value="not_sure">Not sure / other</option>
+        </select>
+      </div>
+      <button class="modal-submit" id="leadSubmit">Send me my options</button>
+    </div>
+    <div class="modal-success" id="modalSuccess">
+      <div class="big">📬</div>
+      <h4>You're on the list</h4>
+      <p>A TGM counsellor will follow up with programmes matched to your profile and destination.</p>
+    </div>
+  </div>
+</div>
+
+<canvas id="reportCanvas" width="1080" height="1350" style="display:none;"></canvas>

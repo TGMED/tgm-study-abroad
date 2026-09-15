@@ -1,0 +1,26 @@
+{% extends "counselor_base.html" %}
+{% block title %}{{ student.display_name or 'Student' }} — TGM Counselor{% endblock %}
+{% block counselor_content %}
+<div class="a-head ac-head">
+  <div>
+    <h1>{{ student.display_name or 'Student' }}</h1>
+    <p><a href="{{ url_for('counselor_portal.dashboard') }}">← Back to conversations</a> &nbsp;·&nbsp; {{ student.email }}</p>
+  </div>
+</div>
+
+<div class="card ac-transcript" id="acTranscript" data-last-id="{{ last_id }}" data-student-id="{{ student.id }}">
+  {% for m in messages %}
+  <div class="ac-bubble ac-{{ 'user' if m.sender_type == 'student' else 'counsellor' }}">{{ m.content }}</div>
+  {% else %}
+  <div class="empty">No messages yet.</div>
+  {% endfor %}
+</div>
+
+<div class="card ac-replybox">
+  <textarea id="acInput" rows="2" placeholder="Reply to {{ (student.display_name or 'student').split(' ')[0] }}…"></textarea>
+  <button class="btn btn-green" id="acSendBtn">Send</button>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/counselor_portal_chat.js') }}"></script>
+{% endblock %}

@@ -6,6 +6,18 @@
   <p>{{ members|length }} onboarded member{{ '' if members|length == 1 else 's' }} · ranked by community activity</p>
 </div>
 
+{% set digest = request.args.get('digest') %}
+{% if digest %}
+<div style="padding:12px 16px;border-radius:10px;margin-bottom:16px;{{ 'background:#fdecea;color:#8a2e24;' if digest == 'no-activity' else 'background:#e8f7ee;color:#0f5c37;' }}">
+  {% if digest == 'no-activity' %}No community activity in the last 7 days — nothing was sent.
+  {% else %}Weekly digest {{ digest.replace('sent-', 'sent to ').replace('-skipped-', ' member(s), skipped ') }}.{% endif %}
+</div>
+{% endif %}
+
+<form method="post" action="{{ url_for('admin.admin_send_digest') }}" style="margin-bottom:16px;" onsubmit="return confirm('Email the weekly activity digest to every onboarded member now?');">
+  <button class="btn btn-sm" type="submit">Send weekly digest now</button>
+</form>
+
 <div class="stats">
   <div class="stat"><b>{{ totals.members }}</b><small>Total members</small></div>
   <div class="stat"><b>{{ totals.posts }}</b><small>Posts</small></div>

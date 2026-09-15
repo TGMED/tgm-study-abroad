@@ -5,25 +5,13 @@
 {% block content_mod %}flush{% endblock %}
 {% block back %}<a class="backbtn" href="{{ url_for('social.communities') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>Back</a>{% endblock %}
 {% block app_content %}
-<div class="slack">
-
-  <!-- Channels rail -->
-  <aside class="ch-rail">
-    <div class="ch-workspace">TGM <span>Community</span></div>
-    <div class="ch-section">Channels</div>
-    <nav class="ch-list">
-      {% for r in nav_rooms %}
-      <a class="ch-item {{ 'on' if r.key == room }}" href="{{ url_for('community.community_room', room=r.key) }}"><span class="hash">#</span>{{ r.label }}</a>
-      {% endfor %}
-    </nav>
-    <div class="ch-section">Assistant</div>
-    <a class="ch-item" href="{{ url_for('chat.chat_page') }}"><span class="star">✦</span>Amara AI</a>
-  </aside>
-
   <!-- Chat pane -->
   <div class="chat">
     <header class="chat-head">
-      <div class="chat-title"><span class="hash">#</span>{{ room_label }}<span class="chat-members">{{ member_count }} member{{ '' if member_count == 1 else 's' }}</span></div>
+      <div class="chat-head-main">
+        <div class="chat-title"><span class="hash">#</span>{{ room_label }}<span class="chat-members">{{ member_count }} member{{ '' if member_count == 1 else 's' }} · {{ post_count }} post{{ '' if post_count == 1 else 's' }}</span></div>
+        {% if room_blurb %}<p class="chat-blurb">{{ room_blurb }}</p>{% endif %}
+      </div>
       <div class="chat-head-actions">
         <div class="sb-input chat-search">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
@@ -103,7 +91,6 @@
       <div class="chat-hint">Mention <b>@amara</b> to bring the AI counsellor into the channel.</div>
     </div>
   </div>
-</div>
 
 <!-- Share modal (copy link) -->
 <div class="share-backdrop" id="shareModal">

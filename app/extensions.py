@@ -84,6 +84,20 @@ def current_student_id():
     return session.get("student_id")
 
 
+def counselor_login_required(view):
+    """Separate session namespace from student auth (session['counselor_id'],
+    never session['student_id']) -- a counselor and a student are distinct
+    identities that happen to share a browser cookie jar, not the same
+    account wearing different hats."""
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if not session.get("counselor_id"):
+            return redirect(url_for("counselor_auth.counselor_login", next=request.path))
+        return view(*args, **kwargs)
+
+    return wrapped
+
+
 # ---------------------------------------------------------------------------
 # Flask secret key -- same "env var else generate-and-cache" pattern as
 # ADMIN_PASSWORD above, so sessions survive a restart instead of invalidating
@@ -224,6 +238,8 @@ def _init_db_postgres():
         CREATE TABLE IF NOT EXISTS students (
             id SERIAL PRIMARY KEY,
             email TEXT NOT NULL UNIQUE,
+            phone TEXT UNIQUE,
+            password_hash TEXT,
             display_name TEXT,
             created_at TEXT NOT NULL,
             last_seen_at TEXT,
@@ -329,8 +345,45 @@ def _init_db_postgres():
             resolved_at TEXT,
             resolved_by TEXT
         );
+
+        CREATE TABLE IF NOT EXISTS whatsapp_events (
+            wamid TEXT PRIMARY KEY,
+            created_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS counselors (
+            id SERIAL PRIMARY KEY,
+            full_name TEXT NOT NULL,
+            email TEXT NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL,
+            headline TEXT,
+            avatar_path TEXT,
+            is_active INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS counselor_conversations (
+            id SERIAL PRIMARY KEY,
+            student_id INTEGER NOT NULL REFERENCES students(id),
+            counselor_id INTEGER NOT NULL REFERENCES counselors(id),
+            created_at TEXT NOT NULL,
+            last_message_at TEXT NOT NULL,
+            UNIQUE(student_id, counselor_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS counselor_messages (
+            id SERIAL PRIMARY KEY,
+            conversation_id INTEGER NOT NULL REFERENCES counselor_conversations(id),
+            sender_type TEXT NOT NULL,
+            content TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        );
         """
     )
+    # password_hash was added after some deployments already had a students
+    # table -- CREATE TABLE IF NOT EXISTS above is a no-op against those, so
+    # add the column explicitly for anything created before this.
+    cur.execute("ALTER TABLE students ADD COLUMN IF NOT EXISTS password_hash TEXT")
     # #general was introduced after some students had already onboarded --
     # backfill them in, since every member is expected to land there.
     cur.execute(
@@ -465,6 +518,39 @@ def _init_db_sqlite():
             resolved_at TEXT,
             resolved_by TEXT
         );
+
+        CREATE TABLE IF NOT EXISTS whatsapp_events (
+            wamid TEXT PRIMARY KEY,
+            created_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS counselors (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            full_name TEXT NOT NULL,
+            email TEXT NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL,
+            headline TEXT,
+            avatar_path TEXT,
+            is_active INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS counselor_conversations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id INTEGER NOT NULL REFERENCES students(id),
+            counselor_id INTEGER NOT NULL REFERENCES counselors(id),
+            created_at TEXT NOT NULL,
+            last_message_at TEXT NOT NULL,
+            UNIQUE(student_id, counselor_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS counselor_messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            conversation_id INTEGER NOT NULL REFERENCES counselor_conversations(id),
+            sender_type TEXT NOT NULL,
+            content TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        );
         """
     )
     # Migrations for databases created before these columns existed.
@@ -487,10 +573,15 @@ def _init_db_sqlite():
         "work_history": "TEXT",        # JSON list
         "onboarded": "INTEGER NOT NULL DEFAULT 0",
         "chat_mode": "TEXT NOT NULL DEFAULT 'ai'",  # 'ai' | 'human' -- who currently answers this student's 1:1 chat
+        "phone": "TEXT",               # WhatsApp wa_id -- unique index added separately below (SQLite can't
+                                        # add a UNIQUE column via ALTER TABLE)
+        "password_hash": "TEXT",       # NULL for accounts created before password auth existed, or via the
+                                        # ROI-calculator/WhatsApp flows, which never collect a password
     }
     for col, decl in student_migrations.items():
         if col not in student_columns:
             conn.execute(f"ALTER TABLE students ADD COLUMN {col} {decl}")
+    conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_students_phone ON students(phone) WHERE phone IS NOT NULL")
 
     dm_columns = {row[1] for row in conn.execute("PRAGMA table_info(direct_messages)")}
     if "shared_post_id" not in dm_columns:

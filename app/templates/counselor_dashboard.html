@@ -1,0 +1,28 @@
+{% extends "counselor_base.html" %}
+{% block title %}Your conversations — TGM Counselor{% endblock %}
+{% block counselor_content %}
+<div class="a-head">
+  <h1>Your conversations</h1>
+  <p>{{ conversations|length }} student{{ '' if conversations|length == 1 else 's' }} messaging you</p>
+</div>
+
+{% if conversations %}
+<div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Student</th><th>Email</th><th>Last message</th><th></th></tr></thead>
+    <tbody>
+      {% for c in conversations %}
+      <tr>
+        <td><b>{{ c.display_name or 'Student' }}</b></td>
+        <td>{{ c.email }}</td>
+        <td>{{ ('You: ' if c.last_sender == 'counselor' else '') ~ (c.last_message or '')[:80] }}</td>
+        <td><a class="btn btn-sm" href="{{ url_for('counselor_portal.chat_page', student_id=c.student_id) }}">Open</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty">No conversations yet — they'll show up here as soon as a student messages you.</div>
+{% endif %}
+{% endblock %}

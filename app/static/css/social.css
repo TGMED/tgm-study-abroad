@@ -65,6 +65,19 @@ a.post-author:hover{text-decoration:underline;}
   background:var(--g-200);color:var(--g-700);padding:2px 7px;border-radius:999px;}
 .side-nav a.on .soon{background:rgba(255,255,255,.25);color:#fff;}
 
+.side-group-head{display:flex;align-items:stretch;gap:2px;}
+.side-group-head a{flex:1;min-width:0;}
+.side-chevron{flex:none;display:flex;align-items:center;justify-content:center;width:36px;border:none;background:none;
+  border-radius:10px;color:var(--ink-soft);opacity:.6;cursor:pointer;}
+.side-chevron:hover{background:var(--g-100);opacity:1;}
+.side-chevron svg{width:16px;height:16px;transition:transform .15s;}
+.side-chevron.collapsed svg{transform:rotate(-90deg);}
+.side-sub{display:flex;flex-direction:column;gap:2px;padding:4px 0 6px 34px;}
+.side-sub.collapsed{display:none;}
+.side-sub a{display:block;padding:8px 10px;border-radius:9px;color:var(--muted);font-weight:500;font-size:13.5px;}
+.side-sub a:hover{background:var(--g-100);color:var(--ink-soft);}
+.side-sub a.on{background:var(--g-100);color:var(--g-700);font-weight:700;}
+
 .side-foot{margin-top:auto;padding-top:16px;border-top:1px solid var(--line);}
 .side-me{display:flex;align-items:center;gap:10px;padding:8px;border-radius:12px;}
 .side-me:hover{background:var(--g-100);}
@@ -118,20 +131,6 @@ body.app .main:has(.dw){background:#f1f7f3;}
    Slack-style community (channel rail + chat stream)
    ============================================================ */
 .content.flush{max-width:none;padding:0;height:calc(100vh - 63px);overflow:hidden;}
-.slack{display:grid;grid-template-columns:232px 1fr;height:100%;background:#fff;}
-
-/* Channel rail (dark) */
-.ch-rail{background:#0f3d27;color:#cfe6da;display:flex;flex-direction:column;padding:16px 10px;overflow-y:auto;}
-.ch-workspace{font-family:var(--fh);font-weight:700;font-size:18px;color:#fff;padding:6px 10px 16px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:8px;}
-.ch-workspace span{color:#7fd6a1;font-weight:400;}
-.ch-section{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6f9a85;padding:12px 10px 6px;}
-.ch-list{display:flex;flex-direction:column;gap:1px;}
-.ch-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;color:#cfe6da;font-size:14.5px;font-weight:500;}
-.ch-item:hover{background:rgba(255,255,255,.08);color:#fff;text-decoration:none;}
-.ch-item.on{background:#1b7f4e;color:#fff;font-weight:600;}
-.ch-item .hash{color:#7fb79a;font-weight:600;}
-.ch-item.on .hash{color:#bfe6d1;}
-.ch-item .star{color:#7fd6a1;}
 
 /* Chat pane */
 .chat{display:flex;flex-direction:column;min-width:0;min-height:0;height:100%;background:#fff;}
@@ -139,7 +138,9 @@ body.app .main:has(.dw){background:#f1f7f3;}
 .chat-title{font-family:var(--fh);font-weight:700;font-size:19px;color:#16241c;display:flex;align-items:center;gap:6px;}
 .chat-title .hash{color:#8fb3a1;}
 .chat-members{font-family:var(--fb);font-size:12.5px;font-weight:500;color:#6b8078;margin-left:6px;padding-left:12px;border-left:1px solid #e6efe9;}
-.chat-head-actions{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.chat-head-main{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.chat-blurb{margin:0;font-size:12px;color:#8098a0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.chat-head-actions{margin-left:auto;display:flex;align-items:center;gap:10px;flex:none;}
 .chat-search{width:200px;}
 .chat-search input{height:34px;padding:0 14px 0 38px;font-size:13px;}
 .chat-search svg{left:12px;}
@@ -182,8 +183,7 @@ body.app .main:has(.dw){background:#f1f7f3;}
 
 @media (max-width:860px){
   .content.flush{height:calc(100vh - 63px - 64px);}
-  .slack{grid-template-columns:1fr;}
-  .ch-rail,.chat-search{display:none;}
+  .chat-search{display:none;}
 }
 
 /* ---- Standalone dashboard chrome (design's own top bar) ---- */
@@ -331,9 +331,6 @@ body.dash-standalone{background:#f1f7f3;min-height:100vh;}
 .room-card:hover{transform:translateY(-4px);box-shadow:var(--sh-md);}
 .room-card .rc-top{display:flex;align-items:center;gap:14px;}
 .room-card h3{margin:0;font-size:18px;color:var(--ink);}
-.room-card .rc-blurb{color:var(--muted);font-size:13.5px;margin:0;line-height:1.5;}
-.room-card .rc-stats{display:flex;gap:16px;font-size:12.5px;color:var(--muted);}
-.room-card .rc-stats b{color:var(--ink);}
 .room-card .rc-actions{display:flex;gap:10px;margin-top:auto;}
 .room-card .rc-actions .btn{flex:1;justify-content:center;}
 .joinbtn.joined{background:var(--g-100);color:var(--g-700);border:1px solid var(--g-200);}

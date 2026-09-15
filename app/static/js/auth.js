@@ -1,28 +1,28 @@
 (function () {
   var $ = function (id) { return document.getElementById(id); };
-  var next = window.__TGM_LOGIN_NEXT__ || '/chat';
+  var next = window.__TGM_RESET_NEXT__ || '/chat';
 
   function showError(msg) {
-    var el = $('loginError');
+    var el = $('resetError');
     el.textContent = msg;
     el.style.display = 'block';
   }
   function clearError() {
-    $('loginError').style.display = 'none';
+    $('resetError').style.display = 'none';
   }
 
-  function requestOtp() {
-    var email = $('loginEmail').value.trim();
+  function requestReset() {
+    var email = $('resetEmail').value.trim();
     if (!email || email.indexOf('@') === -1) {
       showError('Enter a valid email address.');
       return;
     }
     clearError();
-    var btn = $('requestOtpBtn');
+    var btn = $('requestResetBtn');
     btn.disabled = true;
     btn.textContent = 'Sending…';
 
-    fetch('/api/auth/request-otp', {
+    fetch('/api/auth/request-password-reset', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: email })
@@ -37,8 +37,8 @@
       }
       $('codeEmailLabel').textContent = email;
       $('stepEmail').style.display = 'none';
-      $('stepCode').style.display = 'block';
-      $('loginCode').focus();
+      $('stepReset').style.display = 'block';
+      $('resetCode').focus();
     }).catch(function () {
       btn.disabled = false;
       btn.textContent = 'Send me a code →';
@@ -46,47 +46,53 @@
     });
   }
 
-  function verifyOtp() {
-    var email = $('loginEmail').value.trim();
-    var code = $('loginCode').value.trim();
+  function submitReset() {
+    var email = $('resetEmail').value.trim();
+    var code = $('resetCode').value.trim();
+    var newPassword = $('newPassword').value;
     if (!code) {
       showError('Enter the 6-digit code.');
       return;
     }
+    if (newPassword.length < 8) {
+      showError('New password must be at least 8 characters.');
+      return;
+    }
     clearError();
-    var btn = $('verifyOtpBtn');
+    var btn = $('resetPasswordBtn');
     btn.disabled = true;
-    btn.textContent = 'Verifying…';
+    btn.textContent = 'Saving…';
 
-    fetch('/api/auth/verify-otp', {
+    fetch('/api/auth/reset-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email, code: code, next: next })
+      body: JSON.stringify({ email: email, code: code, new_password: newPassword, next: next })
     }).then(function (res) {
       return res.json().then(function (data) { return { ok: res.ok, data: data }; });
     }).then(function (result) {
       if (!result.ok) {
         btn.disabled = false;
-        btn.textContent = 'Verify & continue →';
-        showError((result.data && result.data.error) || 'Incorrect code — try again.');
+        btn.textContent = 'Set new password →';
+        showError((result.data && result.data.error) || 'Could not reset your password — try again.');
         return;
       }
       window.location.href = result.data.redirect || next;
     }).catch(function () {
       btn.disabled = false;
-      btn.textContent = 'Verify & continue →';
+      btn.textContent = 'Set new password →';
       showError('Could not reach the server — check your connection and try again.');
     });
   }
 
-  $('requestOtpBtn').addEventListener('click', requestOtp);
-  $('verifyOtpBtn').addEventListener('click', verifyOtp);
-  $('resendOtpBtn').addEventListener('click', requestOtp);
+  $('requestResetBtn').addEventListener('click', requestReset);
+  $('resetPasswordBtn').addEventListener('click', submitReset);
+  $('resendResetBtn').addEventListener('click', requestReset);
 
-  if ($('loginEmail').value.trim()) {
-    // Email was pre-filled (came from the ROI calculator's "returning email"
-    // redirect) -- kick off the OTP request immediately so the student
+  if ($('resetEmail').value.trim()) {
+    // Email was pre-filled (came from /login's "This account doesn't have a
+    // password yet" message, or the ROI calculator's returning-email
+    // redirect) -- kick off the reset request immediately so the student
     // doesn't have to re-type/confirm their own email.
-    requestOtp();
+    requestReset();
   }
 })();

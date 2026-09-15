@@ -1,0 +1,451 @@
+/* ============================================================
+   ROI calculator, scoped for embedding inside the logged-in app
+   shell (which loads social.css). Derived from style.css +
+   theme.css but with every selector confined under .roi-calc --
+   including the :root variable definitions, which are moved onto
+   .roi-calc itself -- so nothing here can leak out and repaint
+   the sidebar/topbar chrome or override social.css's own
+   like-named CSS variables (--line, --g-500, etc. collide by
+   name between the two systems). See templates/index.html /
+   base.html + style.css/theme.css for the original, unscoped
+   version used on the public (logged-out) calculator page.
+   ============================================================ */
+@font-face{font-family:'Plex Data';font-style:normal;font-weight:500;font-display:swap;src:url('/static/fonts/plex-mono-500.woff2') format('woff2');}
+@font-face{font-family:'Plex Data';font-style:normal;font-weight:600;font-display:swap;src:url('/static/fonts/plex-mono-600.woff2') format('woff2');}
+
+.roi-calc{
+  --ink-950:#0A0F1E;
+  --ink-800:#131A2E;
+  --ink-700:#1C2540;
+  --ink-600:#2A3352;
+  --amber-500:#F2A93B;
+  --amber-600:#D98A22;
+  --amber-300:#FFD48A;
+  --naira-500:#1F9D57;
+  --naira-400:#33C57A;
+  --paper-0:#F5F7F1;
+  --paper-50:#EDEFE7;
+  --paper-100:#DEE2D6;
+  --paper-200:#C9CFBE;
+
+  --surface:var(--paper-0);
+  --surface-raised:#ffffff;
+  --surface-sunken:var(--paper-100);
+  --text-primary:var(--ink-950);
+  --text-secondary:#5B6357;
+  --text-muted:#8A9184;
+  --line:rgba(10,15,30,0.14);
+  --line-strong:rgba(10,15,30,0.28);
+  --accent:var(--amber-600);
+  --accent-ink:#3D2600;
+  --stamp:var(--naira-500);
+  --shadow:0 20px 50px -25px rgba(10,15,30,0.35);
+
+  --chart-surface:var(--paper-0);
+  --series-nigeria:#008300;
+  --series-dest:#c9581e;
+}
+
+@media (prefers-color-scheme: dark){
+  .roi-calc{
+    --surface:var(--ink-950);
+    --surface-raised:var(--ink-800);
+    --surface-sunken:var(--ink-700);
+    --text-primary:#EDEFE7;
+    --text-secondary:#AEB6A4;
+    --text-muted:#727C6F;
+    --line:rgba(237,239,231,0.14);
+    --line-strong:rgba(237,239,231,0.28);
+    --accent:var(--amber-500);
+    --accent-ink:#241400;
+    --stamp:var(--naira-400);
+    --shadow:0 20px 60px -20px rgba(0,0,0,0.6);
+
+    --chart-surface:var(--ink-800);
+    --series-nigeria:#33C57A;
+    --series-dest:#F2A93B;
+  }
+}
+
+/* Forces the same white + light-green theme regardless of the visitor's
+   light/dark preference -- matches theme.css's unconditional remap on the
+   public page, which otherwise would have been undone by the dark-mode
+   block above (this must come after it to win the cascade). */
+.roi-calc{
+  --surface:#ffffff;
+  --surface-raised:#ffffff;
+  --surface-sunken:#F1FBF5;
+  --text-primary:#0E2A1E;
+  --text-secondary:#4B5B52;
+  --text-muted:#7C8A80;
+  --line:rgba(14,42,30,.10);
+  --line-strong:rgba(14,42,30,.20);
+  --accent:#22B573;
+  --accent-ink:#ffffff;
+  --stamp:#149A5E;
+  --shadow:0 22px 55px -30px rgba(14,90,57,.45);
+  --chart-surface:#F6FBF7;
+  --series-nigeria:#9AA6A0;
+  --series-dest:#149A5E;
+}
+
+.roi-calc, .roi-calc *{box-sizing:border-box;}
+
+.roi-calc{
+  color:var(--text-primary);
+  font-family:'Plex Body', system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing:antialiased;
+  line-height:1.5;
+  background:
+    radial-gradient(120% 80% at 100% -10%, #DFF6E8, transparent 55%),
+    linear-gradient(180deg, #F6FBF7 0%, #ffffff 60%);
+  border-radius:20px;
+  border:1px solid var(--line);
+}
+.roi-calc a{color:inherit;}
+.roi-calc button{font-family:inherit;}
+.roi-calc ::selection{background:var(--accent); color:var(--accent-ink);}
+
+.roi-calc .num{font-family:'Plex Data', ui-monospace, "IBM Plex Mono", monospace; font-variant-numeric:tabular-nums;}
+
+.roi-calc .site{max-width:640px; margin:0 auto; padding:24px 18px 80px;}
+
+/* ---------- Masthead ---------- */
+.roi-calc .masthead{
+  padding:28px 0 22px;
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  border-bottom:1px solid var(--line);
+  margin-bottom:28px;
+}
+.roi-calc .wordmark{
+  font-family:'Fraunces Display', Georgia, serif;
+  font-weight:900;
+  font-size:26px;
+  letter-spacing:-0.01em;
+  display:flex; align-items:baseline; gap:8px;
+}
+.roi-calc .wordmark .flip{
+  display:inline-block;
+  background:linear-gradient(135deg,#22B573,#149A5E);
+  color:#fff;
+  border-radius:3px;
+  padding:1px 6px;
+  font-family:'Plex Body', sans-serif;
+  font-size:15px;
+  font-weight:600;
+  letter-spacing:0.02em;
+}
+.roi-calc .byline{
+  font-size:11px; letter-spacing:0.14em; text-transform:uppercase;
+  color:var(--text-muted); text-align:right; line-height:1.4;
+}
+.roi-calc .byline b{color:var(--text-secondary); font-weight:600;}
+
+.roi-calc .eyebrow{
+  font-family:'Plex Data', monospace;
+  font-size:11px; letter-spacing:0.16em; text-transform:uppercase;
+  color:var(--text-muted);
+  display:flex; align-items:center; gap:8px;
+  margin:0 0 10px;
+}
+.roi-calc .eyebrow::before{content:""; width:16px; height:1px; background:var(--line-strong);}
+
+.roi-calc h1.hero{
+  font-family:'Fraunces Display', Georgia, serif;
+  font-weight:900;
+  font-size:clamp(30px, 7vw, 42px);
+  line-height:1.04;
+  letter-spacing:-0.015em;
+  margin:0 0 10px;
+  text-wrap:balance;
+}
+.roi-calc p.dek{
+  font-size:15px; color:var(--text-secondary); max-width:46ch; margin:0 0 30px;
+}
+
+/* ---------- Ticket counter card ---------- */
+.roi-calc .card{
+  background:var(--surface-raised);
+  border:1px solid var(--line);
+  border-radius:18px;
+  box-shadow:var(--shadow);
+}
+.roi-calc .counter{padding:22px 22px 24px; margin-bottom:22px;}
+.roi-calc .gate-label{
+  font-family:'Plex Data', monospace; font-size:11px; letter-spacing:0.14em;
+  text-transform:uppercase; color:var(--accent); font-weight:600;
+  margin:0 0 14px; display:flex; align-items:center; gap:8px;
+}
+.roi-calc .gate-label .n{
+  background:var(--accent); color:var(--accent-ink); border-radius:50%;
+  width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center;
+  font-size:10.5px; font-weight:700;
+}
+.roi-calc .field{margin-bottom:16px;}
+.roi-calc .field label{
+  display:block; font-size:11.5px; letter-spacing:0.06em; text-transform:uppercase;
+  color:var(--text-muted); margin-bottom:6px; font-weight:600;
+}
+.roi-calc .field input, .roi-calc .field select{
+  width:100%; padding:12px 14px; border-radius:10px;
+  border:1px solid var(--line-strong); background:var(--surface-sunken);
+  color:var(--text-primary); font-size:15.5px; font-family:'Plex Body', sans-serif;
+}
+.roi-calc .field input::placeholder{color:var(--text-muted);}
+.roi-calc .field input:focus, .roi-calc .field select:focus, .roi-calc .destchip:focus-visible, .roi-calc button:focus-visible{
+  outline:2px solid var(--accent); outline-offset:2px;
+}
+.roi-calc .naira-input{position:relative;}
+.roi-calc .naira-input .prefix{
+  position:absolute; left:14px; top:50%; transform:translateY(-50%);
+  color:var(--text-muted); font-family:'Plex Data', monospace; font-size:15px; pointer-events:none;
+}
+.roi-calc .naira-input input{padding-left:32px;}
+.roi-calc .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+
+.roi-calc .destinations{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:6px;}
+.roi-calc .destchip{
+  text-align:left; cursor:pointer; border:1px solid var(--line-strong);
+  background:var(--surface-sunken); border-radius:12px; padding:12px 12px;
+  display:flex; flex-direction:column; gap:2px; color:var(--text-primary);
+  transition:border-color .15s ease, background .15s ease;
+}
+.roi-calc .destchip:hover{border-color:var(--accent);}
+.roi-calc .destchip.active{
+  border-color:var(--accent); background:color-mix(in oklab, var(--accent) 16%, var(--surface-sunken));
+}
+.roi-calc .destchip .flag{font-size:20px;}
+.roi-calc .destchip .name{font-weight:600; font-size:14.5px;}
+.roi-calc .destchip .curr{font-size:11.5px; color:var(--text-muted); font-family:'Plex Data', monospace;}
+
+.roi-calc .calc-btn{
+  width:100%; margin-top:14px; padding:15px; border:none; border-radius:12px;
+  background:linear-gradient(135deg,#22B573,#149A5E); color:#fff;
+  font-family:'Plex Body', system-ui, sans-serif; font-weight:600; font-size:15.5px;
+  letter-spacing:normal; text-transform:none; cursor:pointer;
+  box-shadow:0 14px 30px -16px rgba(14,90,57,.6);
+  transition:transform .16s ease, box-shadow .2s ease;
+}
+.roi-calc .calc-btn:not(:disabled):hover{transform:translateY(-2px); box-shadow:0 20px 38px -16px rgba(14,90,57,.7);}
+.roi-calc .calc-btn:active{transform:scale(0.99);}
+.roi-calc .calc-btn:disabled{opacity:0.45; cursor:not-allowed;}
+.roi-calc .fx-badge{
+  margin-top:10px; text-align:center; font-family:'Plex Data', monospace;
+  font-size:10.5px; letter-spacing:0.04em; color:var(--text-muted);
+  display:flex; align-items:center; justify-content:center; gap:6px;
+}
+.roi-calc .fx-badge .dot{width:6px; height:6px; border-radius:50%; background:var(--text-muted);}
+.roi-calc .fx-badge.live .dot{background:var(--stamp);}
+.roi-calc .fx-badge.live{color:var(--text-secondary);}
+
+/* ---------- Results ---------- */
+.roi-calc #results{display:none;}
+.roi-calc #results.show{display:block;}
+
+/* ---------- Boarding pass ---------- */
+.roi-calc .boardingpass{
+  position:relative;
+  display:grid; grid-template-columns:1fr 128px;
+  background:var(--surface-raised);
+  border:1px solid var(--line);
+  border-radius:18px;
+  box-shadow:var(--shadow);
+  margin-bottom:22px;
+  overflow:hidden;
+}
+.roi-calc .bp-main{padding:22px 20px 20px; position:relative;}
+.roi-calc .bp-stub{
+  padding:20px 14px;
+  background:var(--surface-sunken);
+  border-left:2px dashed var(--line-strong);
+  display:flex; flex-direction:column; align-items:center; justify-content:space-between; gap:12px;
+  text-align:center;
+}
+.roi-calc .bp-route{
+  display:flex; align-items:center; gap:8px; font-family:'Plex Data', monospace;
+  font-size:12px; color:var(--text-muted); letter-spacing:0.06em; margin-bottom:16px;
+}
+.roi-calc .bp-route .city{color:var(--text-secondary); font-weight:600;}
+.roi-calc .bp-route .plane{color:var(--accent);}
+.roi-calc .bp-verdict{
+  font-family:'Fraunces Display', Georgia, serif; font-weight:900;
+  font-size:clamp(22px,6vw,30px); line-height:1.05; margin:0 0 6px; text-wrap:balance;
+}
+.roi-calc .bp-verdict .emoji{font-size:0.85em;}
+.roi-calc .bp-sub{font-size:13.5px; color:var(--text-secondary); margin:0 0 18px; max-width:38ch;}
+.roi-calc .bp-figures{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:6px;}
+.roi-calc .bp-figure .k{font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); margin-bottom:3px;}
+.roi-calc .bp-figure .v{font-family:'Plex Data', monospace; font-weight:600; font-size:16.5px;}
+.roi-calc .bp-multiplier{
+  margin-top:14px; padding-top:14px; border-top:1px solid var(--line);
+  display:flex; align-items:baseline; gap:8px;
+}
+.roi-calc .bp-multiplier .x{font-family:'Plex Data', monospace; font-weight:600; font-size:34px; color:var(--stamp);}
+.roi-calc .bp-multiplier .label{font-size:12.5px; color:var(--text-secondary); max-width:28ch;}
+
+.roi-calc .bp-barcode{
+  height:30px; margin-top:auto;
+  background:repeating-linear-gradient(90deg, var(--text-primary) 0 2px, transparent 2px 5px);
+  opacity:0.55; width:100%; border-radius:2px;
+}
+.roi-calc .visa-meter{width:100%;}
+.roi-calc .visa-meter .vk{font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); margin-bottom:6px;}
+.roi-calc .visa-bars{display:flex; gap:3px; margin-bottom:6px;}
+.roi-calc .visa-bars i{flex:1; height:7px; border-radius:2px; background:var(--line-strong); display:block;}
+.roi-calc .visa-bars i.on{background:var(--accent);}
+.roi-calc .visa-note{font-size:10.5px; color:var(--text-secondary); line-height:1.3;}
+
+.roi-calc .family-toggle{width:100%; padding-top:12px; border-top:1px solid var(--line);}
+.roi-calc .family-toggle button{
+  width:100%; padding:8px; border-radius:8px; border:1px solid var(--line-strong);
+  background:transparent; color:var(--text-secondary); font-size:11.5px; cursor:pointer;
+}
+.roi-calc .family-toggle button.on{background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600;}
+
+.roi-calc .bp-actions{display:flex; gap:8px; padding:0 20px 20px;}
+.roi-calc .bp-actions button{
+  flex:1; padding:11px 10px; border-radius:9px; border:1px solid var(--line-strong);
+  background:var(--surface-sunken); color:var(--text-primary); font-size:12.5px; font-weight:600;
+  cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;
+}
+.roi-calc .bp-actions button:hover{border-color:var(--accent);}
+
+.roi-calc .family-panel{
+  display:none; padding:0 20px 18px; gap:12px; grid-template-columns:1fr auto; align-items:center;
+}
+.roi-calc .family-panel.show{display:grid;}
+.roi-calc .family-panel .stepper{display:flex; align-items:center; gap:10px; background:var(--surface-sunken); border-radius:9px; padding:6px 10px;}
+.roi-calc .family-panel .stepper button{border:none; background:var(--surface-raised); width:26px; height:26px; border-radius:6px; cursor:pointer; font-size:15px; color:var(--text-primary);}
+.roi-calc .family-panel .stepper span{min-width:16px; text-align:center; font-family:'Plex Data', monospace;}
+.roi-calc .family-panel label{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-secondary);}
+
+/* ---------- Trajectory chart ---------- */
+.roi-calc .chartcard{padding:20px 20px 18px; margin-bottom:22px;}
+.roi-calc .chartcard-head{display:flex; align-items:flex-start; justify-content:space-between; gap:12px;}
+.roi-calc .chartcard h3{
+  font-family:'Fraunces Display', Georgia, serif; font-weight:900; font-size:18px; margin:0 0 3px;
+}
+.roi-calc .chartcard .sub{font-size:12.5px; color:var(--text-secondary); margin:0 0 16px; max-width:38ch;}
+.roi-calc .chart-view-toggle{
+  display:flex; flex-shrink:0; border:1px solid var(--line-strong); border-radius:8px; overflow:hidden;
+}
+.roi-calc .chart-view-toggle button{
+  border:none; background:var(--surface-sunken); color:var(--text-secondary);
+  font-size:11px; font-weight:600; padding:7px 10px; cursor:pointer; white-space:nowrap;
+  font-family:'Plex Data', monospace;
+}
+.roi-calc .chart-view-toggle button.active{background:var(--accent); color:var(--accent-ink);}
+.roi-calc .chart-view-toggle button:disabled{opacity:0.4; cursor:not-allowed;}
+.roi-calc .legend{display:flex; gap:16px; margin-bottom:10px;}
+.roi-calc .legend .item{display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-secondary);}
+.roi-calc .legend .sw{width:10px; height:10px; border-radius:3px;}
+.roi-calc .chart-wrap{position:relative; background:var(--chart-surface); border-radius:10px;}
+.roi-calc .chart-tooltip{
+  position:absolute; pointer-events:none; background:var(--ink-950); color:#EDEFE7;
+  border-radius:8px; padding:8px 10px; font-size:11.5px; box-shadow:0 10px 30px rgba(0,0,0,0.3);
+  transform:translate(-50%,-110%); opacity:0; transition:opacity .1s ease; white-space:nowrap; z-index:5;
+}
+.roi-calc .chart-tooltip.show{opacity:1;}
+.roi-calc .chart-tooltip .row{display:flex; align-items:center; gap:6px; margin-top:2px;}
+.roi-calc .chart-tooltip .sw{width:8px; height:8px; border-radius:2px;}
+.roi-calc .table-toggle{
+  margin-top:10px; background:none; border:none; color:var(--text-muted); font-size:11.5px;
+  text-decoration:underline; cursor:pointer; padding:0;
+}
+.roi-calc .datatable{display:none; width:100%; border-collapse:collapse; margin-top:12px; font-size:12px;}
+.roi-calc .datatable.show{display:table;}
+.roi-calc .datatable th, .roi-calc .datatable td{text-align:right; padding:6px 8px; border-bottom:1px solid var(--line);}
+.roi-calc .datatable th:first-child, .roi-calc .datatable td:first-child{text-align:left;}
+.roi-calc .datatable th{color:var(--text-muted); font-weight:600; font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em;}
+
+.roi-calc .chart-note{
+  display:none; font-size:11px; color:var(--text-muted); background:var(--surface-sunken);
+  border-radius:8px; padding:8px 10px; margin:0 0 10px;
+}
+.roi-calc .chart-note.show{display:block;}
+
+/* ---------- Path breakdown ---------- */
+.roi-calc .pathcard{padding:20px 20px 16px; margin-bottom:22px;}
+.roi-calc .pathcard h3{
+  font-family:'Fraunces Display', Georgia, serif; font-weight:900; font-size:18px; margin:0 0 10px;
+}
+.roi-calc .path-interpretation{font-size:13.5px; color:var(--text-secondary); line-height:1.55; margin:0 0 18px;}
+.roi-calc .path-steps{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:14px;}
+.roi-calc .path-steps li{display:flex; gap:12px; align-items:flex-start;}
+.roi-calc .path-steps .step-n{
+  flex-shrink:0; width:22px; height:22px; border-radius:50%; background:var(--accent); color:var(--accent-ink);
+  display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700;
+  font-family:'Plex Data', monospace;
+}
+.roi-calc .path-steps .step-body{font-size:13px; color:var(--text-secondary); line-height:1.45; padding-top:2px;}
+.roi-calc .path-steps .step-body b{color:var(--text-primary); font-weight:600;}
+
+/* ---------- Soft pivot banner ---------- */
+.roi-calc .pivot{
+  border-radius:18px; padding:24px 22px; margin-bottom:18px;
+  background:linear-gradient(155deg, #0E7A4A, #149A5E 60%, #22B573);
+  color:#F0FBF5; position:relative; overflow:hidden;
+  border:none;
+}
+.roi-calc .pivot::before{
+  content:"ADMISSIONS OPEN"; position:absolute; top:14px; right:-32px;
+  font-family:'Plex Data', monospace; font-size:10px; letter-spacing:0.18em;
+  background:#fff; color:#0E7A4A; padding:3px 40px; transform:rotate(6deg);
+  font-weight:700;
+}
+.roi-calc .pivot .eyebrow{color:#DFF6E8;}
+.roi-calc .pivot .eyebrow::before{background:rgba(237,239,231,0.3);}
+.roi-calc .pivot h3{
+  font-family:'Fraunces Display', Georgia, serif; font-weight:900; font-size:22px;
+  line-height:1.15; margin:0 0 8px; max-width:22ch; text-wrap:balance;
+}
+.roi-calc .pivot p{font-size:13.5px; color:#E3F5EA; max-width:42ch; margin:0 0 18px;}
+.roi-calc .pivot .pivot-btn{
+  background:#fff; color:#0E7A4A; border:none; padding:13px 18px;
+  border-radius:10px; font-weight:700; font-size:13.5px; cursor:pointer;
+  transition:transform .16s ease; font-family:'Plex Body',sans-serif;
+}
+.roi-calc .pivot .pivot-btn:hover{transform:translateY(-2px);}
+
+.roi-calc footer{padding:22px 4px 0; font-size:11.5px; color:var(--text-muted); line-height:1.6; border-top:1px solid var(--line); margin-top:6px;}
+.roi-calc footer p{margin:0 0 8px;}
+
+/* ---------- Modal ---------- */
+.roi-calc .modal-backdrop{
+  position:fixed; inset:0; background:rgba(6,9,18,0.6); display:none;
+  align-items:center; justify-content:center; padding:20px; z-index:50;
+}
+.roi-calc .modal-backdrop.show{display:flex;}
+.roi-calc .modal{
+  background:var(--surface-raised); border-radius:16px; padding:26px 24px; max-width:400px; width:100%;
+  box-shadow:var(--shadow); position:relative;
+}
+.roi-calc .modal-close{position:absolute; top:14px; right:14px; background:none; border:none; font-size:18px; color:var(--text-muted); cursor:pointer;}
+.roi-calc .modal h4{font-family:'Fraunces Display', Georgia, serif; font-size:19px; margin:0 0 6px; font-weight:900;}
+.roi-calc .modal p{font-size:13px; color:var(--text-secondary); margin:0 0 18px;}
+.roi-calc .modal .field input, .roi-calc .modal .field select{font-size:14.5px;}
+.roi-calc .modal-submit{
+  width:100%; padding:13px; border:none; border-radius:12px;
+  background:linear-gradient(135deg,#22B573,#149A5E); color:#fff;
+  font-family:'Plex Body', system-ui, sans-serif; font-weight:600; font-size:13.5px; cursor:pointer; margin-top:4px;
+  box-shadow:0 14px 30px -16px rgba(14,90,57,.6);
+  transition:transform .16s ease, box-shadow .2s ease;
+}
+.roi-calc .modal-submit:not(:disabled):hover{transform:translateY(-2px); box-shadow:0 20px 38px -16px rgba(14,90,57,.7);}
+.roi-calc .modal-submit:disabled{opacity:0.6; cursor:not-allowed;}
+.roi-calc .modal-error{display:none; color:#C0392B; font-size:12.5px; margin:-10px 0 14px;}
+.roi-calc .modal-error.show{display:block;}
+.roi-calc .modal-success{display:none; text-align:center; padding:10px 0;}
+.roi-calc .modal-success.show{display:block;}
+.roi-calc .modal-success .big{font-size:34px; margin-bottom:8px;}
+.roi-calc .modal-form.hide{display:none;}
+
+@media (max-width:420px){
+  .roi-calc .boardingpass{grid-template-columns:1fr; }
+  .roi-calc .bp-stub{border-left:none; border-top:2px dashed var(--line-strong); flex-direction:row; flex-wrap:wrap;}
+  .roi-calc .destinations{grid-template-columns:1fr;}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .roi-calc *{transition:none !important; animation:none !important;}
+}

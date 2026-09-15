@@ -105,8 +105,6 @@ body.home .tgm-nav-logout:hover{background:var(--g-600); transform:translateY(-1
 .lp-title{font-family:var(--font-head); font-weight:900; color:var(--ink);
   font-size:clamp(38px,6vw,68px); line-height:1.02; letter-spacing:-1px; margin:18px 0 0;}
 .lp-underline{position:relative; color:var(--g-600); white-space:nowrap;}
-.lp-underline::after{content:""; position:absolute; left:0; right:0; bottom:.08em; height:.16em;
-  background:linear-gradient(90deg,var(--g-300),var(--g-500)); border-radius:99px; z-index:-1; opacity:.55;}
 .lp-lead{color:var(--muted); font-size:clamp(16px,1.6vw,19px); line-height:1.6; max-width:33em; margin:20px 0 0;}
 .lp-lead em{color:var(--g-700); font-style:normal; font-weight:600;}
 .lp-cta-row{display:flex; flex-wrap:wrap; gap:14px; margin:28px 0 0;}

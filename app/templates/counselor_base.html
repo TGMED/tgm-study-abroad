@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>{% block title %}TGM Counselors{% endblock %}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}" />
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+{% set ep = request.endpoint or '' %}
+<header class="a-top">
+  <a class="a-brand" href="{{ url_for('counselor_portal.dashboard') }}">TGM <span>Counselor</span></a>
+  {% if session.get('counselor_id') %}
+  <nav class="a-nav">
+    <a class="{{ 'on' if ep in ('counselor_portal.dashboard','counselor_portal.chat_page') }}" href="{{ url_for('counselor_portal.dashboard') }}">Conversations</a>
+  </nav>
+  <a class="a-site" href="{{ url_for('counselor_auth.counselor_logout') }}">Log out</a>
+  {% endif %}
+</header>
+<main class="a-main">
+  {% block counselor_content %}{% endblock %}
+</main>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>
