@@ -214,4 +214,4 @@ def reset_password():
 @auth_bp.route("/logout")
 def logout():
     session.clear()
-    return redirect(url_for("roi.home"))
+    return redirect(url_for("home"))

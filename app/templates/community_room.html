@@ -9,8 +9,22 @@
   <div class="chat">
     <header class="chat-head">
       <div class="chat-head-main">
-        <div class="chat-title"><span class="hash">#</span>{{ room_label }}<span class="chat-members">{{ member_count }} member{{ '' if member_count == 1 else 's' }} · {{ post_count }} post{{ '' if post_count == 1 else 's' }}</span></div>
+        <div class="chat-title">
+          <button type="button" class="chat-room-switch" id="chatRoomSwitch" aria-haspopup="true" aria-expanded="false">
+            <span class="hash">#</span>{{ room_label }}
+            <svg class="crs-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <span class="chat-members">{{ member_count }} member{{ '' if member_count == 1 else 's' }} · {{ post_count }} post{{ '' if post_count == 1 else 's' }}</span>
+        </div>
         {% if room_blurb %}<p class="chat-blurb">{{ room_blurb }}</p>{% endif %}
+        <div class="chat-room-dropdown" id="chatRoomDropdown" hidden>
+          {% for r in nav_rooms %}
+          <a href="{{ url_for('community.community_room', room=r.key) }}" class="{{ 'on' if r.key == room }}">
+            <span class="crd-code">{{ r.code }}</span>
+            <span class="crd-label">{{ r.label }}</span>
+          </a>
+          {% endfor %}
+        </div>
       </div>
       <div class="chat-head-actions">
         <div class="sb-input chat-search">
@@ -115,6 +129,31 @@
 Array.prototype.forEach.call(document.querySelectorAll('.post-content'), function (el) {
   el.innerHTML = renderChatMarkdown(el.textContent);
 });
+</script>
+<script>
+// Room switcher -- the sidebar's channel list is hidden on mobile, so
+// tapping the room name is the only way to jump to another community there.
+(function () {
+  var btn = document.getElementById('chatRoomSwitch');
+  var dropdown = document.getElementById('chatRoomDropdown');
+  if (!btn || !dropdown) return;
+  function close() {
+    dropdown.hidden = true;
+    btn.setAttribute('aria-expanded', 'false');
+  }
+  btn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    var opening = dropdown.hidden;
+    dropdown.hidden = !opening;
+    btn.setAttribute('aria-expanded', String(opening));
+  });
+  document.addEventListener('click', function (e) {
+    if (!dropdown.hidden && !dropdown.contains(e.target) && e.target !== btn) close();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') close();
+  });
+})();
 </script>
 <script>
 // Slack-style: keep the message list scrolled to the newest, and grow the input.

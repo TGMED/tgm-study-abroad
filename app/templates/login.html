@@ -3,12 +3,12 @@
 {% block content %}
 <div class="site" style="max-width:420px;">
   <header class="masthead">
-    <div class="wordmark">GLOBAL EDUCATION <span class="flip">ROI</span></div>
+    <div class="wordmark">STUDENT <span class="flip">COMMUNITY</span></div>
   </header>
 
   <p class="eyebrow">Welcome back</p>
   <h1 class="hero" style="font-size:28px;">Log in</h1>
-  <p class="dek">Get back into your chat with Amara and the community.</p>
+  <p class="dek">Get back into your chat with Amara and the Community.</p>
 
   <div class="card counter">
     {% if error %}<p class="modal-error show" style="margin:-4px 0 14px;">{{ error }}</p>{% endif %}
@@ -25,7 +25,7 @@
       <button class="calc-btn" type="submit">Log in →</button>
     </form>
     <p class="fx-badge" style="margin-top:14px;"><a href="{{ url_for('auth.forgot_password', email=email, next=next_url) }}">Forgot password?</a></p>
-    <p class="fx-badge" style="margin-top:8px;">New here? <a href="{{ url_for('auth.join', next=next_url) }}">Join the community</a> instead.</p>
+    <p class="fx-badge" style="margin-top:8px;">New here? <a href="{{ url_for('auth.join', next=next_url) }}">Join the Community</a> instead.</p>
   </div>
 </div>
 {% endblock %}

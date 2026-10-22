@@ -3,7 +3,7 @@
 {% block admin_content %}
 <div class="a-head">
   <h1>Captured leads</h1>
-  <p>{{ rows|length }} lead{{ '' if rows|length == 1 else 's' }} captured{{ ' · Google Form forwarding on' if google_form_configured else '' }}{{ ' · HubSpot forwarding on' if hubspot_configured else '' }}</p>
+  <p>{{ rows|length }} lead{{ '' if rows|length == 1 else 's' }} captured · historical only, the ROI calculator that fed this has been removed</p>
 </div>
 
 <p class="warn"><b>Password-protected (HTTP Basic Auth)</b>, meant for local/internal use. If deployed publicly, put it behind HTTPS.</p>
@@ -41,6 +41,6 @@
   </table>
 </div>
 {% else %}
-<div class="empty">No leads captured yet. Submit the "See matching programmes" form on the main page to test.</div>
+<div class="empty">No leads were ever captured.</div>
 {% endif %}
 {% endblock %}

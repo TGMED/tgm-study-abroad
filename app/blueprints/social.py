@@ -327,7 +327,7 @@ def dashboard():
         {"label": "Write a headline", "done": bool(prof["headline"]), "href": url_for("social.settings")},
         {"label": "Add your study history", "done": bool(prof["study_history"]), "href": url_for("social.settings")},
         {"label": "Add your work history", "done": bool(prof["work_history"]), "href": url_for("social.settings")},
-        {"label": "Join your first community", "done": len(joined_rooms) > 0, "href": url_for("social.communities")},
+        {"label": "Join your first Community", "done": len(joined_rooms) > 0, "href": url_for("social.communities")},
     ]
     remaining = [s for s in steps if not s["done"]]
     completeness = int((len(steps) - len(remaining)) / len(steps) * 100)

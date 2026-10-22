@@ -13,7 +13,7 @@
       <span class="dw-status">{{ 'Already abroad' if prof.user_type == 'abroad' else 'Planning to go abroad' }}</span>
       <h1>Welcome back, {{ prof.name.split(' ')[0] }}</h1>
       <p>
-        {% if prof.user_type == 'abroad' and questions_total %}{{ questions_total }} {{ 'person' if questions_total == 1 else 'people' }} asked questions in the community this week. Answering one takes two minutes.
+        {% if prof.user_type == 'abroad' and questions_total %}{{ questions_total }} {{ 'person' if questions_total == 1 else 'people' }} asked questions in the Community this week. Answering one takes two minutes.
         {% elif prof.user_type == 'abroad' %}Thanks for being here to guide others. Share your journey and help someone make their move.
         {% else %}Your journey starts with the right people. Connect, ask questions, and get closer to your move.{% endif %}
       </p>
@@ -110,7 +110,7 @@
         </div>
         {% else %}
         <div class="dw-card" style="text-align:center;padding:34px;color:#6b8078;">
-          <p style="margin:0 0 14px;">No community activity yet.</p>
+          <p style="margin:0 0 14px;">No Community activity yet.</p>
           <a class="dw-btn-sm" href="{{ url_for('social.communities') }}">Explore communities</a>
         </div>
         {% endif %}
@@ -119,11 +119,6 @@
 
     <!-- Rail -->
     <aside class="dw-rail">
-      <section class="dw-card">
-        <div class="dw-card-head"><h2>ROI Calculator</h2></div>
-        <p class="dw-sub">See what studying abroad is worth for you, after rent, tax and cost of living — revisit it anytime as your numbers change.</p>
-        <a class="dw-btn-sm" href="{{ url_for('roi.index') }}">Open calculator →</a>
-      </section>
 
       {% if remaining %}
       <section class="dw-dark">

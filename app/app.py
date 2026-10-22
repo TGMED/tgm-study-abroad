@@ -13,10 +13,9 @@ for _stream in (sys.stdout, sys.stderr):
     if hasattr(_stream, "reconfigure"):
         _stream.reconfigure(encoding="utf-8", errors="replace")
 
-from flask import Flask  # noqa: E402
+from flask import Flask, render_template  # noqa: E402
 
 from extensions import close_db, get_or_create_secret_key, init_db  # noqa: E402
-from blueprints.roi import roi_bp  # noqa: E402
 from blueprints.auth import auth_bp  # noqa: E402
 from blueprints.chat import chat_bp  # noqa: E402
 from blueprints.community import community_bp  # noqa: E402
@@ -36,7 +35,8 @@ def create_app():
     app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
     close_db(app)
 
-    app.register_blueprint(roi_bp)
+    app.add_url_rule("/", "home", lambda: render_template("home.html"))
+
     app.register_blueprint(auth_bp)
     app.register_blueprint(chat_bp)
     app.register_blueprint(community_bp)

@@ -4,7 +4,7 @@ import secrets
 import sqlite3
 from functools import wraps
 
-from flask import Response, g, redirect, request, session, url_for
+from flask import g, redirect, request, session, url_for
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
@@ -16,7 +16,8 @@ DB_PATH = os.path.join(DATA_DIR, "leads.db")
 DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
 
 # ---------------------------------------------------------------------------
-# Admin auth (HTTP Basic) for /admin/leads and /admin/community. Set
+# Admin auth -- a proper session-backed login page (see blueprints/admin.py's
+# admin_login/admin_logout), not the browser's native Basic Auth prompt. Set
 # ADMIN_USERNAME/ADMIN_PASSWORD in .env for a stable login. If ADMIN_PASSWORD is
 # left unset, a random one is generated once and cached in data/.admin_password
 # (not regenerated on every reload/restart) -- so the page is never reachable
@@ -55,13 +56,8 @@ def check_admin_auth(username, password):
 def requires_admin_auth(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
-        auth = request.authorization
-        if not auth or not check_admin_auth(auth.username, auth.password):
-            return Response(
-                "Authentication required.",
-                401,
-                {"WWW-Authenticate": 'Basic realm="Global Education ROI Admin"'},
-            )
+        if not session.get("is_admin"):
+            return redirect(url_for("admin.admin_login", next=request.path))
         return view(*args, **kwargs)
 
     return wrapped
@@ -336,6 +332,17 @@ def _init_db_postgres():
             resolved_action TEXT
         );
 
+        CREATE TABLE IF NOT EXISTS ai_post_queue (
+            id SERIAL PRIMARY KEY,
+            room TEXT NOT NULL DEFAULT 'general',
+            content TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pending',
+            created_at TEXT NOT NULL,
+            reviewed_at TEXT,
+            posted_at TEXT,
+            community_post_id INTEGER REFERENCES community_posts(id)
+        );
+
         CREATE TABLE IF NOT EXISTS human_handoff_queue (
             id SERIAL PRIMARY KEY,
             student_id INTEGER NOT NULL REFERENCES students(id),
@@ -509,6 +516,17 @@ def _init_db_sqlite():
             resolved_action TEXT
         );
 
+        CREATE TABLE IF NOT EXISTS ai_post_queue (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            room TEXT NOT NULL DEFAULT 'general',
+            content TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pending',
+            created_at TEXT NOT NULL,
+            reviewed_at TEXT,
+            posted_at TEXT,
+            community_post_id INTEGER REFERENCES community_posts(id)
+        );
+
         CREATE TABLE IF NOT EXISTS human_handoff_queue (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             student_id INTEGER NOT NULL REFERENCES students(id),
@@ -576,7 +594,7 @@ def _init_db_sqlite():
         "phone": "TEXT",               # WhatsApp wa_id -- unique index added separately below (SQLite can't
                                         # add a UNIQUE column via ALTER TABLE)
         "password_hash": "TEXT",       # NULL for accounts created before password auth existed, or via the
-                                        # ROI-calculator/WhatsApp flows, which never collect a password
+                                        # WhatsApp flow, which never collects a password
     }
     for col, decl in student_migrations.items():
         if col not in student_columns:

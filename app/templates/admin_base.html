@@ -9,18 +9,23 @@
 <body>
 {% set ep = request.endpoint or '' %}
 <header class="a-top">
-  <a class="a-brand" href="{{ url_for('admin.admin_members') }}">TGM <span>Admin</span></a>
+  <a class="a-brand" href="{{ url_for('admin.admin_members') if session.get('is_admin') else url_for('admin.admin_login') }}">TGM <span>Admin</span></a>
+  {% if session.get('is_admin') %}
   <nav class="a-nav">
     <a class="{{ 'on' if ep in ('admin.admin_members','admin.admin_member') }}" href="{{ url_for('admin.admin_members') }}">Members</a>
     <a class="{{ 'on' if ep in ('admin.admin_inbox','admin.admin_inbox_chat') }}" href="{{ url_for('admin.admin_inbox') }}">Inbox{% if open_handoffs %} <em>{{ open_handoffs }}</em>{% endif %}</a>
     <a class="{{ 'on' if ep == 'admin.admin_community' }}" href="{{ url_for('admin.admin_community') }}">Moderation{% if open_reports %} <em>{{ open_reports }}</em>{% endif %}</a>
     <a class="{{ 'on' if ep == 'admin.admin_leads' }}" href="{{ url_for('admin.admin_leads') }}">Leads</a>
+    <a class="{{ 'on' if ep == 'admin.admin_updates' }}" href="{{ url_for('admin.admin_updates') }}">Updates{% if open_updates %} <em>{{ open_updates }}</em>{% endif %}</a>
     <a class="{{ 'on' if ep == 'admin.admin_counselors' }}" href="{{ url_for('admin.admin_counselors') }}">Counselors</a>
   </nav>
-  <a class="a-site" href="{{ url_for('roi.home') }}">View site →</a>
+  <a class="a-site" href="{{ url_for('home') }}">View site →</a>
+  <a class="a-site" href="{{ url_for('admin.admin_logout') }}">Log out</a>
+  {% endif %}
 </header>
 <main class="a-main">
   {% block admin_content %}{% endblock %}
 </main>
+{% block admin_scripts %}{% endblock %}
 </body>
 </html>

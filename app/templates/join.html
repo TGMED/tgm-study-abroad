@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Join the community — TGM{% endblock %}
+{% block title %}Join the Community — TGM{% endblock %}
 {% block content %}
 <div class="site" style="max-width:440px;">
   <header class="masthead">
@@ -26,7 +26,7 @@
         <label for="password">Password</label>
         <input type="password" id="password" name="password" placeholder="At least 8 characters" autocomplete="new-password" required minlength="8" />
       </div>
-      <button class="calc-btn" type="submit">Join the community →</button>
+      <button class="calc-btn" type="submit">Join the Community →</button>
     </form>
     <p class="fx-badge" style="margin-top:14px;">Be kind. Posts are visible to everyone in the room.</p>
     <p class="fx-badge" style="margin-top:8px;">Already a member? <a href="{{ url_for('auth.login', next=next_url) }}">Log in</a> instead.</p>

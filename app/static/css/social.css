@@ -138,8 +138,23 @@ body.app .main:has(.dw){background:#f1f7f3;}
 .chat-title{font-family:var(--fh);font-weight:700;font-size:19px;color:#16241c;display:flex;align-items:center;gap:6px;}
 .chat-title .hash{color:#8fb3a1;}
 .chat-members{font-family:var(--fb);font-size:12.5px;font-weight:500;color:#6b8078;margin-left:6px;padding-left:12px;border-left:1px solid #e6efe9;}
-.chat-head-main{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.chat-head-main{display:flex;flex-direction:column;gap:2px;min-width:0;position:relative;}
 .chat-blurb{margin:0;font-size:12px;color:#8098a0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+.chat-room-switch{display:inline-flex;align-items:center;gap:5px;background:none;border:none;font:inherit;
+  font-family:var(--fh);font-weight:700;font-size:19px;color:#16241c;cursor:pointer;padding:3px 6px;margin:-3px -6px;border-radius:8px;}
+.chat-room-switch:hover{background:var(--g-100);}
+.chat-room-switch .hash{color:#8fb3a1;}
+.crs-chevron{width:15px;height:15px;flex-shrink:0;color:#8fb3a1;transition:transform .15s;}
+.chat-room-switch[aria-expanded="true"] .crs-chevron{transform:rotate(180deg);}
+.chat-room-dropdown{position:absolute;top:100%;left:0;margin-top:8px;background:#fff;border:1px solid var(--line);
+  border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.14);padding:6px;min-width:210px;max-height:min(60vh,400px);
+  overflow-y:auto;z-index:30;}
+.chat-room-dropdown a{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font-size:14px;font-weight:600;color:var(--ink-soft);}
+.chat-room-dropdown a:hover{background:var(--g-100);text-decoration:none;}
+.chat-room-dropdown a.on{background:var(--g-100);color:var(--g-700);}
+.crd-code{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;
+  background:var(--g-100);font-size:10px;font-weight:800;color:var(--g-700);flex-shrink:0;}
 .chat-head-actions{margin-left:auto;display:flex;align-items:center;gap:10px;flex:none;}
 .chat-search{width:200px;}
 .chat-search input{height:34px;padding:0 14px 0 38px;font-size:13px;}
@@ -573,6 +588,7 @@ body.dash-standalone{background:#f1f7f3;min-height:100vh;}
 
 /* ---------- Responsive ---------- */
 .botnav{display:none;}
+
 @media (max-width:860px){
   .app-shell{grid-template-columns:1fr;}
   .side{display:none;}

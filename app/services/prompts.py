@@ -17,7 +17,7 @@ COMMUNITY_ROOMS = ("general", "uk", "canada", "ireland", "usa", "poland", "germa
 
 # Display metadata for each community room (label + country-code badge).
 COMMUNITY_ROOM_META = {
-    "general": {"label": "General", "code": "★", "blurb": "Say hello & meet the whole community, whatever your destination"},
+    "general": {"label": "General", "code": "★", "blurb": "Say hello & meet the whole Community, whatever your destination"},
     "uk": {"label": "United Kingdom", "code": "GB", "blurb": "Students & pros across the UK"},
     "canada": {"label": "Canada", "code": "CA", "blurb": "PGWP, PR routes & campus life"},
     "ireland": {"label": "Ireland", "code": "IE", "blurb": "EU tech hub & English-taught study"},
@@ -72,7 +72,7 @@ AMARA_PERSONA = (
 def _profile_block(profile):
     if not profile:
         return ""
-    lines = ["STUDENT PROFILE (from their Global Education ROI calculator result):"]
+    lines = ["STUDENT PROFILE:"]
     if profile.get("email"):
         lines.append(f"- Email: {profile['email']}")
     if profile.get("profession"):
@@ -87,7 +87,7 @@ def _profile_block(profile):
         grade = f" ({profile['grade']})" if profile.get("grade") else ""
         lines.append(f"- Highest qualification: {profile['qualification']}{grade}")
     if profile.get("score") is not None:
-        lines.append(f"- ROI score: {profile['score']}/100")
+        lines.append(f"- Profile score: {profile['score']}/100")
     if profile.get("ratio") is not None:
         lines.append(f"- Projected earning-uplift ratio: {profile['ratio']}x")
     return "\n".join(lines)
@@ -97,12 +97,39 @@ def build_chat_system_prompt(profile, opening=False):
     parts = [AMARA_PERSONA, get_knowledge_supplement_block(), _profile_block(profile)]
     if opening:
         parts.append(
-            "The student has just completed the ROI calculator and has not sent a "
-            "message yet. Proactively open the conversation yourself: greet them by "
-            "their profession and destination, reference their actual ROI score and "
-            "earning-uplift ratio, and suggest 2-3 concrete next steps or course/"
-            "programme directions given their profile. Do not wait for them to speak "
-            "first, and do not say you are waiting for input."
+            "The student has just joined and has not sent a message yet. Proactively "
+            "open the conversation yourself: greet them, reference anything you know "
+            "about their profile above (if any), and suggest 2-3 concrete next steps "
+            "or course/programme directions. Do not wait for them to speak first, and "
+            "do not say you are waiting for input."
+        )
+    return "\n\n".join(p for p in parts if p)
+
+
+STUDY_UPDATE_PERSONA = (
+    "You write short community updates for TGM Education's study-abroad Community, "
+    "posted into the #General room a couple of times a day. Your audience is a mix "
+    "of people already abroad and people still planning their move. Cover study-abroad "
+    "news, visa/immigration-policy changes, how to find and apply for scholarships, or "
+    "practical tips -- not a specific named scholarship with an amount or deadline "
+    "unless you are highly confident it is still accurate right now, since a wrong "
+    "deadline actively harms a student who trusts it. When in doubt, write about the "
+    "*process* (how to search for scholarships, what to prepare, common mistakes, how "
+    "visa rules tend to change) rather than a specific time-sensitive claim.\n\n"
+    "Write 2-4 short paragraphs, plain and warm, like a knowledgeable friend, not a "
+    "press release. You may use **bold** or a short bullet list if it genuinely helps "
+    "readability. End with one concrete, low-effort action the reader can take today. "
+    "Do not greet anyone by name, do not say 'Hi everyone' or similar, do not mention "
+    "that you are an AI or that this is a scheduled post, and do not add a sign-off."
+)
+
+
+def build_study_update_prompt(recent_posts=None):
+    parts = [STUDY_UPDATE_PERSONA, get_knowledge_supplement_block()]
+    if recent_posts:
+        parts.append(
+            "Do not repeat these recent posts -- write about something different this "
+            "time:\n\n" + "\n\n---\n\n".join(recent_posts)
         )
     return "\n\n".join(p for p in parts if p)
 

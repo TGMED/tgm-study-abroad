@@ -2,11 +2,10 @@ import datetime
 import os
 import secrets
 
-from flask import Blueprint, abort, jsonify, redirect, render_template, request, url_for
+from flask import Blueprint, abort, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.security import generate_password_hash
 
-from extensions import get_db, requires_admin_auth
-from blueprints.roi import GOOGLE_FORM_ACTION_URL, HUBSPOT_ACCESS_TOKEN
+from extensions import check_admin_auth, get_db, requires_admin_auth
 from services.digest import send_weekly_digest
 from services.prompts import COMMUNITY_ROOM_META
 from services.whatsapp import WhatsAppSendError, send_text_message
@@ -30,6 +29,13 @@ def _initials(name):
 
 def _room_label(room):
     return COMMUNITY_ROOM_META.get(room, {}).get("label", (room or "").title())
+
+
+def _safe_next(raw):
+    """Only allow same-site relative paths as a post-login redirect target."""
+    if raw and raw.startswith("/") and not raw.startswith("//"):
+        return raw
+    return None
 
 
 def _ago(iso):
@@ -75,7 +81,46 @@ def _inject_admin():
         ).fetchone()["c"]
     except Exception:
         h = 0
-    return {"open_reports": n, "open_handoffs": h}
+    try:
+        u = db.execute(
+            "SELECT COUNT(*) AS c FROM ai_post_queue WHERE status = 'pending'"
+        ).fetchone()["c"]
+    except Exception:
+        u = 0
+    return {"open_reports": n, "open_handoffs": h, "open_updates": u}
+
+
+# ---------------------------------------------------------------------------
+# Admin login/logout -- a real form page instead of the browser's native
+# Basic Auth prompt. Session key is 'is_admin', a flag rather than a user id
+# since there's one shared admin credential, not individual accounts.
+# ---------------------------------------------------------------------------
+@admin_bp.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+    next_url = _safe_next(request.values.get("next")) or url_for("admin.admin_members")
+
+    if session.get("is_admin"):
+        return redirect(next_url)
+
+    if request.method == "POST":
+        username = (request.form.get("username") or "").strip()
+        password = request.form.get("password") or ""
+        if not check_admin_auth(username, password):
+            return render_template(
+                "admin_login.html", username=username, next_url=next_url,
+                error="Incorrect username or password.",
+            )
+        session["is_admin"] = True
+        session.permanent = True
+        return redirect(next_url)
+
+    return render_template("admin_login.html", username="", next_url=next_url, error=None)
+
+
+@admin_bp.route("/admin/logout")
+def admin_logout():
+    session.pop("is_admin", None)
+    return redirect(url_for("admin.admin_login"))
 
 
 def _delete_post_cascade(db, pid):
@@ -233,19 +278,100 @@ def delete_post(pid):
 
 
 # ---------------------------------------------------------------------------
-# Leads
+# Leads -- historical only. The ROI calculator that used to write to this
+# table has been removed; this view just lets you look back at what it
+# captured while it existed.
 # ---------------------------------------------------------------------------
 @admin_bp.route("/admin/leads")
 @requires_admin_auth
 def admin_leads():
     db = get_db()
     rows = db.execute("SELECT * FROM leads ORDER BY id DESC").fetchall()
+    return render_template("admin_leads.html", rows=rows)
+
+
+# ---------------------------------------------------------------------------
+# AI-generated study-abroad/scholarship updates -- queued by
+# scripts/generate_study_abroad_update.py, posted to #general only once an
+# admin approves. Nothing in this queue reaches a student unreviewed.
+# ---------------------------------------------------------------------------
+@admin_bp.route("/admin/updates")
+@requires_admin_auth
+def admin_updates():
+    db = get_db()
+    pending = db.execute(
+        "SELECT * FROM ai_post_queue WHERE status = 'pending' ORDER BY id DESC"
+    ).fetchall()
+    reviewed = db.execute(
+        "SELECT * FROM ai_post_queue WHERE status != 'pending' ORDER BY id DESC LIMIT 15"
+    ).fetchall()
     return render_template(
-        "admin_leads.html",
-        rows=rows,
-        google_form_configured=bool(GOOGLE_FORM_ACTION_URL),
-        hubspot_configured=bool(HUBSPOT_ACCESS_TOKEN),
+        "admin_updates.html", pending=pending, reviewed=reviewed, ago=_ago, rooms=COMMUNITY_ROOM_META,
     )
+
+
+def _post_update_to_community(db, room, content):
+    """Inserts an official 'TGM Updates' post (AI-generated or admin-written
+    -- same author identity either way) and returns its community_posts id."""
+    cur = db.execute(
+        """INSERT INTO community_posts (room, student_id, author_label, is_ai, parent_id, content, created_at)
+           VALUES (?, NULL, 'TGM Updates', 1, NULL, ?, ?)""",
+        (room, content, _now()),
+    )
+    return cur.lastrowid
+
+
+@admin_bp.route("/admin/updates/<int:queue_id>/approve", methods=["POST"])
+@requires_admin_auth
+def approve_update(queue_id):
+    db = get_db()
+    row = db.execute("SELECT * FROM ai_post_queue WHERE id = ?", (queue_id,)).fetchone()
+    if not row or row["status"] != "pending":
+        return redirect(url_for("admin.admin_updates"))
+
+    now = _now()
+    post_id = _post_update_to_community(db, row["room"], row["content"])
+    db.execute(
+        "UPDATE ai_post_queue SET status = 'approved', reviewed_at = ?, posted_at = ?, community_post_id = ? WHERE id = ?",
+        (now, now, post_id, queue_id),
+    )
+    db.commit()
+    return redirect(url_for("admin.admin_updates"))
+
+
+@admin_bp.route("/admin/updates/compose", methods=["POST"])
+@requires_admin_auth
+def compose_update():
+    content = (request.form.get("content") or "").strip()
+    room = request.form.get("room") or "general"
+    if not content or room not in COMMUNITY_ROOM_META:
+        return redirect(url_for("admin.admin_updates"))
+
+    db = get_db()
+    now = _now()
+    post_id = _post_update_to_community(db, room, content)
+    # Logged into the same queue table, pre-approved, so it shows up in
+    # "Recently reviewed" alongside AI-generated updates -- one history for
+    # everything that's ever gone out under the TGM Updates account.
+    db.execute(
+        """INSERT INTO ai_post_queue (room, content, status, created_at, reviewed_at, posted_at, community_post_id)
+           VALUES (?, ?, 'approved', ?, ?, ?, ?)""",
+        (room, content, now, now, now, post_id),
+    )
+    db.commit()
+    return redirect(url_for("admin.admin_updates"))
+
+
+@admin_bp.route("/admin/updates/<int:queue_id>/reject", methods=["POST"])
+@requires_admin_auth
+def reject_update(queue_id):
+    db = get_db()
+    db.execute(
+        "UPDATE ai_post_queue SET status = 'rejected', reviewed_at = ? WHERE id = ? AND status = 'pending'",
+        (_now(), queue_id),
+    )
+    db.commit()
+    return redirect(url_for("admin.admin_updates"))
 
 
 # ---------------------------------------------------------------------------

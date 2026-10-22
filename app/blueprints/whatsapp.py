@@ -60,11 +60,11 @@ def wa_continue(token):
         # Expired/invalid isn't a dead end -- messaging WhatsApp again (see
         # _handle_message's reminder branch) immediately hands back a fresh
         # link, so there's no need for a dedicated error page here.
-        return redirect(url_for("roi.home"))
+        return redirect(url_for("home"))
     db = get_db()
     row = db.execute("SELECT id FROM students WHERE id = ?", (data.get("student_id"),)).fetchone()
     if not row:
-        return redirect(url_for("roi.home"))
+        return redirect(url_for("home"))
     session["student_id"] = row["id"]
     session.permanent = True
     return redirect(url_for("chat.chat_page"))

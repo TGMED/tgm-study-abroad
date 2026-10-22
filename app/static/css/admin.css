@@ -123,3 +123,10 @@ form.inline{display:inline;}
 .report-meta{font-size:12px;color:var(--faint);margin-bottom:10px;}
 .report-post{background:var(--bg);border-radius:10px;padding:12px 14px;font-size:14px;margin-bottom:10px;white-space:pre-wrap;line-height:1.5;}
 .report-reason{font-size:13px;color:var(--mut);margin-bottom:14px;}
+
+.compose-box textarea{width:100%;box-sizing:border-box;padding:12px 14px;border-radius:10px;border:1px solid var(--line2);
+  font-family:inherit;font-size:14px;line-height:1.5;resize:vertical;margin-bottom:12px;}
+.compose-box textarea:focus{outline:2px solid var(--g-500);outline-offset:1px;border-color:transparent;}
+.compose-row{display:flex;gap:10px;align-items:center;}
+.compose-row select{height:34px;padding:0 10px;border-radius:8px;border:1px solid var(--line2);font-family:inherit;font-size:13.5px;
+  color:var(--ink);background:#fff;}
