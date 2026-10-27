@@ -1,0 +1,32 @@
+name: Deploy Community
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Deployment
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PRODUCTION_SSH_HOST }}
+          username: ${{ secrets.PRODUCTION_SSH_USERNAME }}
+          key: ${{ secrets.PRODUCTION_SSH_PRIVATE_KEY }}
+          script: |
+            cd /var/www/community.tgmeducation.com
+            git fetch origin main
+            git reset --hard origin/main
+            # Use the project's virtualenv if it exists, otherwise system pip3
+            if [ -f venv/bin/activate ]; then . venv/bin/activate; PIP=pip;
+            elif [ -f .venv/bin/activate ]; then . .venv/bin/activate; PIP=pip;
+            elif [ -f env/bin/activate ]; then . env/bin/activate; PIP=pip;
+            else PIP=pip3; fi
+            $PIP install -r requirements.txt
+            systemctl stop community.tgmeducation.com
+            systemctl start community.tgmeducation.com

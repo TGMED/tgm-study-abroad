@@ -12,8 +12,8 @@
     <textarea name="content" rows="5" placeholder="Write the post exactly as it should appear -- **bold**, *italic*, and lists are supported." required></textarea>
     <div class="compose-row">
       <select name="room">
-        {% for key, meta in rooms.items() %}
-        <option value="{{ key }}" {{ 'selected' if key == 'general' }}>#{{ meta.label }}</option>
+        {% for r in rooms %}
+        <option value="{{ r.key }}" {{ 'selected' if r.key == 'general' }}>#{{ r.label }}</option>
         {% endfor %}
       </select>
       <button type="submit" class="btn btn-green">Post now</button>

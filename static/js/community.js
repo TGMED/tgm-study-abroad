@@ -6,6 +6,9 @@
   var postInput = $('postInput');
   var replyToId = $('replyToId');
   var replyContext = $('replyContext');
+  var postImageInput = $('postImageInput');
+  var imagePreview = $('composerImagePreview');
+  var imagePreviewImg = $('composerImagePreviewImg');
 
   var STAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="width:60%;height:60%;"><path d="M12 3l2.1 4.7L19 9l-3.6 3.3.9 4.9L12 15l-4.3 2.2.9-4.9L5 9l4.9-1.3z"/></svg>';
   function toast(m, ok) { if (window.tgmToast) window.tgmToast(m, ok); else if (ok === false) alert(m); }
@@ -81,6 +84,13 @@
     var content = document.createElement('div'); content.className = 'post-content';
     content.innerHTML = renderChatMarkdown(post.content); card.appendChild(content);
 
+    if (post.has_image) {
+      var img = document.createElement('img');
+      img.className = 'post-image'; img.loading = 'lazy'; img.alt = '';
+      img.src = '/media/post/' + post.id;
+      card.appendChild(img);
+    }
+
     var vote = document.createElement('button');
     vote.className = 'post-vote' + (post.my_vote ? ' voted' : '');
     vote.setAttribute('data-post-id', post.id);
@@ -127,21 +137,47 @@
     } else { replyContext.style.display = 'none'; replyContext.textContent = ''; }
   }
 
+  function clearImageSelection() {
+    if (postImageInput) postImageInput.value = '';
+    if (imagePreview) imagePreview.style.display = 'none';
+    if (imagePreviewImg) imagePreviewImg.src = '';
+  }
+
   function submitPost() {
     var content = postInput.value.trim(); if (!content) return;
     var btn = $('postSendBtn'); btn.disabled = true;
-    fetch('/api/community/' + room + '/posts', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: content, parent_id: replyToId.value || null })
-    }).then(function (res) { return res.json().then(function (d) { return { ok: res.ok, d: d }; }); })
+    var form = new FormData();
+    form.append('content', content);
+    form.append('parent_id', replyToId.value || '');
+    if (postImageInput && postImageInput.files[0]) form.append('image', postImageInput.files[0]);
+    // No Content-Type header here -- the browser sets the multipart
+    // boundary itself; setting it manually breaks the upload.
+    fetch('/api/community/' + room + '/posts', { method: 'POST', body: form })
+      .then(function (res) { return res.json().then(function (d) { return { ok: res.ok, d: d }; }); })
       .then(function (r) {
         btn.disabled = false;
         if (!r.ok) { toast((r.d && r.d.error) || 'Could not post.', false); return; }
-        postInput.value = ''; setReplyTarget(null);
+        postInput.value = ''; setReplyTarget(null); clearImageSelection();
         addPostToDom(r.d.post);
         if (r.d.ai_reply) addPostToDom(r.d.ai_reply);
-        toast('Posted');
+        if (r.d.image_error) toast(r.d.image_error, false);
+        else toast('Posted');
       }).catch(function () { btn.disabled = false; toast('Could not reach the server — try again.', false); });
+  }
+
+  if (postImageInput) {
+    $('postAttachBtn').addEventListener('click', function () { postImageInput.click(); });
+    postImageInput.addEventListener('change', function () {
+      var file = postImageInput.files[0];
+      if (!file) { clearImageSelection(); return; }
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        imagePreviewImg.src = e.target.result;
+        imagePreview.style.display = 'flex';
+      };
+      reader.readAsDataURL(file);
+    });
+    $('composerImageRemove').addEventListener('click', clearImageSelection);
   }
 
   // ---------- voting ----------

@@ -1,3 +1,4 @@
+import datetime
 import os
 import re
 import secrets
@@ -207,6 +208,22 @@ def init_db():
         _init_db_sqlite()
 
 
+# One-time seed for the `communities` table -- the rooms this app shipped
+# with before admins could create/delete their own via /admin/communities.
+# Only inserted when the table is empty, so an admin's own edits (including
+# deleting one of these) are never clobbered on a later restart.
+_DEFAULT_COMMUNITIES = [
+    ("general", "General", "★", "Say hello & meet the whole Community, whatever your destination"),
+    ("uk", "United Kingdom", "GB", "Students & pros across the UK"),
+    ("canada", "Canada", "CA", "PGWP, PR routes & campus life"),
+    ("ireland", "Ireland", "IE", "EU tech hub & English-taught study"),
+    ("usa", "United States", "US", "F-1, OPT & the American route"),
+    ("poland", "Poland", "PL", "Affordable tuition & the Schengen route"),
+    ("germany", "Germany", "DE", "Tuition-free public unis & blocked-account visas"),
+    ("australia", "Australia", "AU", "Post-study work visas & world-class unis"),
+]
+
+
 def _init_db_postgres():
     import psycopg2
 
@@ -285,6 +302,14 @@ def _init_db_postgres():
             created_at TEXT NOT NULL
         );
 
+        CREATE TABLE IF NOT EXISTS communities (
+            key TEXT PRIMARY KEY,
+            label TEXT NOT NULL,
+            code TEXT NOT NULL,
+            blurb TEXT,
+            created_at TEXT NOT NULL
+        );
+
         CREATE TABLE IF NOT EXISTS community_posts (
             id SERIAL PRIMARY KEY,
             room TEXT NOT NULL,
@@ -294,7 +319,8 @@ def _init_db_postgres():
             parent_id INTEGER REFERENCES community_posts(id),
             content TEXT NOT NULL,
             created_at TEXT NOT NULL,
-            is_hidden INTEGER NOT NULL DEFAULT 0
+            is_hidden INTEGER NOT NULL DEFAULT 0,
+            image_path TEXT
         );
 
         CREATE TABLE IF NOT EXISTS community_votes (
@@ -391,6 +417,15 @@ def _init_db_postgres():
     # table -- CREATE TABLE IF NOT EXISTS above is a no-op against those, so
     # add the column explicitly for anything created before this.
     cur.execute("ALTER TABLE students ADD COLUMN IF NOT EXISTS password_hash TEXT")
+    cur.execute("ALTER TABLE community_posts ADD COLUMN IF NOT EXISTS image_path TEXT")
+    cur.execute("SELECT COUNT(*) FROM communities")
+    if cur.fetchone()[0] == 0:
+        now_iso = datetime.datetime.utcnow().isoformat()
+        for key, label, code, blurb in _DEFAULT_COMMUNITIES:
+            cur.execute(
+                "INSERT INTO communities (key, label, code, blurb, created_at) VALUES (%s, %s, %s, %s, %s)",
+                (key, label, code, blurb, now_iso),
+            )
     # #general was introduced after some students had already onboarded --
     # backfill them in, since every member is expected to land there.
     cur.execute(
@@ -469,6 +504,14 @@ def _init_db_sqlite():
             created_at TEXT NOT NULL
         );
 
+        CREATE TABLE IF NOT EXISTS communities (
+            key TEXT PRIMARY KEY,
+            label TEXT NOT NULL,
+            code TEXT NOT NULL,
+            blurb TEXT,
+            created_at TEXT NOT NULL
+        );
+
         CREATE TABLE IF NOT EXISTS community_posts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             room TEXT NOT NULL,
@@ -478,7 +521,8 @@ def _init_db_sqlite():
             parent_id INTEGER REFERENCES community_posts(id),
             content TEXT NOT NULL,
             created_at TEXT NOT NULL,
-            is_hidden INTEGER NOT NULL DEFAULT 0
+            is_hidden INTEGER NOT NULL DEFAULT 0,
+            image_path TEXT
         );
 
         CREATE TABLE IF NOT EXISTS community_votes (
@@ -604,6 +648,17 @@ def _init_db_sqlite():
     dm_columns = {row[1] for row in conn.execute("PRAGMA table_info(direct_messages)")}
     if "shared_post_id" not in dm_columns:
         conn.execute("ALTER TABLE direct_messages ADD COLUMN shared_post_id INTEGER")
+
+    post_columns = {row[1] for row in conn.execute("PRAGMA table_info(community_posts)")}
+    if "image_path" not in post_columns:
+        conn.execute("ALTER TABLE community_posts ADD COLUMN image_path TEXT")
+
+    if conn.execute("SELECT COUNT(*) FROM communities").fetchone()[0] == 0:
+        now_iso = datetime.datetime.utcnow().isoformat()
+        conn.executemany(
+            "INSERT INTO communities (key, label, code, blurb, created_at) VALUES (?, ?, ?, ?, ?)",
+            [(key, label, code, blurb, now_iso) for key, label, code, blurb in _DEFAULT_COMMUNITIES],
+        )
 
     # #general was introduced after some students had already onboarded --
     # backfill them in, since every member is expected to land there.

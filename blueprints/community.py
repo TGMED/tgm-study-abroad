@@ -1,20 +1,25 @@
 import datetime
+import os
 import re
 
-from flask import Blueprint, abort, jsonify, redirect, render_template, request, session, url_for
+from flask import Blueprint, abort, jsonify, redirect, render_template, request, send_from_directory, session, url_for
 
 from extensions import get_db, login_required
+from blueprints.social import ALLOWED_EXT, UPLOAD_DIR
+from services.communities import community_meta, room_exists
+from services.communities import room_label as get_room_label
 from services.emailer import EmailSendError, send_reply_notification_email
 from services.gemini import GeminiError, call_gemini
-from services.prompts import COMMUNITY_ROOMS, COMMUNITY_ROOM_META, build_community_system_prompt
+from services.prompts import build_community_system_prompt
 
 community_bp = Blueprint("community", __name__)
 
 MENTION_RE = re.compile(r"(?<!\w)@(amara|ai)\b", re.IGNORECASE)
+MAX_POST_IMAGE_BYTES = 8 * 1024 * 1024
 
 
-def _room_or_404(room):
-    if room not in COMMUNITY_ROOMS:
+def _room_or_404(db, room):
+    if not room_exists(db, room):
         abort(404)
 
 
@@ -52,7 +57,28 @@ def _post_dict(row):
         "my_vote": _col(row, "my_vote", 0),
         "reply_count": _col(row, "reply_count", 0),
         "mine": row["student_id"] is not None and row["student_id"] == session.get("student_id"),
+        "has_image": bool(_col(row, "image_path", None)),
     }
+
+
+def _save_post_image(post_id, file_storage):
+    """Returns (filename_or_None, error_or_None) -- mirrors social.py's
+    _save_avatar. Saved *after* the post row exists so the filename can be
+    keyed off post_id; a rejection here never un-posts the text the student
+    already wrote, it just leaves image_path unset and reports why."""
+    if not file_storage or not file_storage.filename:
+        return None, None
+    ext = os.path.splitext(file_storage.filename)[1].lower()
+    if ext not in ALLOWED_EXT:
+        return None, f"\"{ext or 'that file'}\" isn't a supported image type -- use JPG, PNG, WEBP or GIF."
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    fname = f"post_{post_id}{ext}"
+    path = os.path.join(UPLOAD_DIR, fname)
+    file_storage.save(path)
+    if os.path.getsize(path) > MAX_POST_IMAGE_BYTES:
+        os.remove(path)
+        return None, "That image is over the 8 MB limit -- try a smaller one."
+    return fname, None
 
 
 # Every post row is fetched with its author's avatar, vote tally, the
@@ -90,8 +116,8 @@ def _sort_key(sort):
 @community_bp.route("/community/<room>")
 @login_required
 def community_room(room):
-    _room_or_404(room)
     db = get_db()
+    _room_or_404(db, room)
 
     # Signed-in but not-yet-onboarded members finish their profile first.
     me = db.execute("SELECT onboarded FROM students WHERE id = ?", (session["student_id"],)).fetchone()
@@ -116,7 +142,7 @@ def community_room(room):
         "SELECT COALESCE(MAX(id), 0) AS m FROM community_posts WHERE room = ?", (room,)
     ).fetchone()["m"]
 
-    room_meta = COMMUNITY_ROOM_META.get(room, {})
+    room_meta = community_meta(db).get(room, {})
     room_label = room_meta.get("label", room.title())
     member_count = db.execute(
         "SELECT COUNT(*) AS c FROM room_members WHERE room = ?", (room,)
@@ -136,9 +162,9 @@ def community_room(room):
 @community_bp.route("/api/community/<room>/posts")
 @login_required
 def api_list_posts(room):
-    _room_or_404(room)
-    since = request.args.get("since", type=int, default=0)
     db = get_db()
+    _room_or_404(db, room)
+    since = request.args.get("since", type=int, default=0)
     rows = db.execute(
         _POST_SELECT + " WHERE p.room = ? AND p.id > ? AND p.is_hidden = 0 ORDER BY p.id ASC",
         (session["student_id"], room, since),
@@ -161,12 +187,11 @@ def _notify_reply(db, parent_id, replier_id, replier_label, room, reply_content)
     ).fetchone()
     if not parent or not parent["student_id"] or not parent["email"] or parent["student_id"] == replier_id:
         return
-    room_label = COMMUNITY_ROOM_META.get(room, {}).get("label", room.title())
     try:
         send_reply_notification_email(parent["email"], {
             "to_name": parent["display_name"] or parent["email"].split("@")[0],
             "replier_name": replier_label,
-            "room_label": room_label,
+            "room_label": get_room_label(db, room),
             "post_excerpt": (parent["post_content"] or "")[:200],
             "reply_excerpt": reply_content[:200],
             "post_url": url_for("community.community_room", room=room, _external=True),
@@ -178,17 +203,18 @@ def _notify_reply(db, parent_id, replier_id, replier_label, room, reply_content)
 @community_bp.route("/api/community/<room>/posts", methods=["POST"])
 @login_required
 def api_create_post(room):
-    _room_or_404(room)
-    student_id = session["student_id"]
     db = get_db()
+    _room_or_404(db, room)
+    student_id = session["student_id"]
 
     student = db.execute("SELECT is_banned FROM students WHERE id = ?", (student_id,)).fetchone()
     if student and student["is_banned"]:
         return jsonify({"ok": False, "error": "Your account is restricted from posting."}), 403
 
-    payload = request.get_json(silent=True) or {}
-    content = (payload.get("content") or "").strip()
-    raw_parent_id = payload.get("parent_id")
+    # FormData (not JSON) so an image can ride along with the text -- request.form
+    # covers both that and a plain urlencoded POST, so nothing else needs to change.
+    content = (request.form.get("content") or "").strip()
+    raw_parent_id = request.form.get("parent_id")
     parent_id = int(raw_parent_id) if raw_parent_id not in (None, "") else None
 
     if not content:
@@ -206,6 +232,10 @@ def api_create_post(room):
         (room, student_id, author_label, parent_id, content, now),
     )
     post_id = cur.lastrowid
+
+    image_filename, image_error = _save_post_image(post_id, request.files.get("image"))
+    if image_filename:
+        db.execute("UPDATE community_posts SET image_path = ? WHERE id = ?", (image_filename, post_id))
     db.commit()
 
     if parent_id:
@@ -220,6 +250,7 @@ def api_create_post(room):
         "ok": True,
         "post": _post_dict(post_row),
         "ai_reply": _post_dict(ai_reply_row) if ai_reply_row else None,
+        "image_error": image_error,
     })
 
 
@@ -293,7 +324,7 @@ def _generate_ai_reply(db, room, thread_root_id):
         for r in context_rows
     ]
 
-    system_prompt = build_community_system_prompt(room)
+    system_prompt = build_community_system_prompt(get_room_label(db, room))
     try:
         reply_text = call_gemini(system_prompt, history)
     except GeminiError as exc:
@@ -312,6 +343,16 @@ def _generate_ai_reply(db, room, thread_root_id):
     # still needs a bound value for that placeholder regardless of whose
     # perspective this is fetched from.
     return db.execute(_POST_SELECT + " WHERE p.id = ?", (0, cur.lastrowid)).fetchone()
+
+
+@community_bp.route("/media/post/<int:post_id>")
+@login_required
+def post_image(post_id):
+    db = get_db()
+    row = db.execute("SELECT image_path FROM community_posts WHERE id = ?", (post_id,)).fetchone()
+    if not row or not row["image_path"]:
+        abort(404)
+    return send_from_directory(UPLOAD_DIR, row["image_path"])
 
 
 @community_bp.route("/api/community/posts/<int:post_id>/report", methods=["POST"])

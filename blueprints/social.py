@@ -23,7 +23,7 @@ from flask import (
 )
 
 from extensions import get_db, login_required
-from services.prompts import COMMUNITY_ROOMS, COMMUNITY_ROOM_META
+from services.communities import community_meta, list_communities, room_exists
 
 social_bp = Blueprint("social", __name__)
 
@@ -81,24 +81,18 @@ def profile_dict(row):
     }
 
 
-def _rooms():
-    return [
-        {"key": k, **COMMUNITY_ROOM_META.get(k, {"label": k.title(), "code": k[:2].upper(), "blurb": ""})}
-        for k in COMMUNITY_ROOMS
-    ]
-
-
 # Inject shared template context (current user + nav data) into every page.
 @social_bp.app_context_processor
 def _inject():
+    db = get_db()
     me = None
     if session.get("student_id"):
-        me = profile_dict(current_student())
+        me = profile_dict(current_student(db))
     # `ep` (current endpoint) is what app_base.html's nav uses to highlight
     # the active page -- it was never actually set anywhere, so every
     # `{{ 'on' if ep == '...' }}` check silently evaluated false and the nav
     # never showed an active state at all.
-    return {"me": me, "nav_rooms": _rooms(), "ep": request.endpoint}
+    return {"me": me, "nav_rooms": list_communities(db), "ep": request.endpoint}
 
 
 # Gate: signed-in but not-yet-onboarded users get routed to onboarding.
@@ -157,7 +151,7 @@ def onboarding():
             (row["id"], _now()),
         )
         # Auto-join the community that matches their destination, if any.
-        for rm in _rooms():
+        for rm in list_communities(db):
             if rm["key"] == "general":
                 continue
             if rm["label"].lower() in destination.lower() or rm["key"] in destination.lower():
@@ -171,7 +165,7 @@ def onboarding():
             return redirect(url_for("community.community_room", room="general", notice=avatar_error, notice_type="error"))
         return redirect(url_for("community.community_room", room="general"))
 
-    return render_template("onboarding.html", error=None, form={}, rooms=_rooms())
+    return render_template("onboarding.html", error=None, form={}, rooms=list_communities(db))
 
 
 def _save_avatar(student_id, file_storage):
@@ -245,8 +239,9 @@ def dashboard():
         "SELECT room FROM room_members WHERE student_id = ? ORDER BY joined_at", (sid,)
     ).fetchall()
     joined_keys = [r["room"] for r in joined]
+    all_meta = community_meta(db)
     joined_rooms = [
-        {"key": k, **COMMUNITY_ROOM_META.get(k, {"label": k.title(), "code": k[:2].upper(), "blurb": ""})}
+        {"key": k, **all_meta.get(k, {"label": k.title(), "code": k[:2].upper(), "blurb": ""})}
         for k in joined_keys
     ]
 
@@ -296,7 +291,7 @@ def dashboard():
     ).fetchall()
     feed = [{
         "id": r["id"], "room": r["room"],
-        "room_label": COMMUNITY_ROOM_META.get(r["room"], {}).get("label", r["room"].title()),
+        "room_label": all_meta.get(r["room"], {}).get("label", r["room"].title()),
         "author": r["author_label"], "author_id": r["student_id"], "initials": _inits(r["author_label"]),
         "has_avatar": bool(r["av"]), "ago": _ago(r["created_at"]), "body": r["content"],
         "replies": r["replies"], "tag": "Arrived" if r["ut"] == "abroad" else "Asking",
@@ -313,7 +308,7 @@ def dashboard():
 
     # Communities for you — rooms not yet joined.
     sug_comms = []
-    for rm in _rooms():
+    for rm in list_communities(db):
         if rm["key"] in joined_keys:
             continue
         members = db.execute("SELECT COUNT(*) AS c FROM room_members WHERE room = ?", (rm["key"],)).fetchone()["c"]
@@ -357,11 +352,11 @@ def communities():
 @social_bp.route("/api/community/<room>/membership", methods=["POST"])
 @login_required
 def toggle_membership(room):
-    if room not in COMMUNITY_ROOMS:
+    db = get_db()
+    if not room_exists(db, room):
         abort(404)
     if room == "general":
         return jsonify({"ok": False, "error": "Everyone stays in #general."}), 400
-    db = get_db()
     sid = session["student_id"]
     existing = db.execute(
         "SELECT 1 FROM room_members WHERE student_id = ? AND room = ?", (sid, room)
@@ -396,8 +391,9 @@ def profile(user_id):
     if not row:
         abort(404)
     prof = profile_dict(row)
+    all_meta = community_meta(db)
     joined = [
-        COMMUNITY_ROOM_META.get(r["room"], {}).get("label", r["room"])
+        all_meta.get(r["room"], {}).get("label", r["room"])
         for r in db.execute("SELECT room FROM room_members WHERE student_id = ?", (user_id,)).fetchall()
     ]
     return render_template(

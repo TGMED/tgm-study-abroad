@@ -1,0 +1,55 @@
+{% extends "admin_base.html" %}
+{% block title %}Communities — TGM Admin{% endblock %}
+{% block admin_content %}
+<div class="a-head">
+  <h1>Communities</h1>
+  <p>{{ rows|length }} room{{ '' if rows|length == 1 else 's' }} · #general can't be deleted -- every member auto-joins it</p>
+</div>
+
+<div class="report-card compose-box">
+  <h2 style="font-size:15px;margin:0 0 12px;">Create a community</h2>
+  {% if error %}
+  <div style="padding:10px 12px;border-radius:8px;margin-bottom:14px;background:#fdecea;color:#8a2e24;font-size:13px;">{{ error }}</div>
+  {% endif %}
+  <form method="post" action="{{ url_for('admin.admin_communities') }}">
+    <div style="display:grid;grid-template-columns:1fr 2fr 80px;gap:10px;margin-bottom:10px;">
+      <div>
+        <label style="display:block;font-size:12px;color:var(--mut);margin-bottom:5px;">Key (URL slug)</label>
+        <input type="text" name="key" value="{{ form.key or '' }}" placeholder="e.g. nigeria" maxlength="32" required
+          style="width:100%;height:36px;padding:0 10px;border:1px solid var(--line2);border-radius:8px;font-size:13.5px;box-sizing:border-box;" />
+      </div>
+      <div>
+        <label style="display:block;font-size:12px;color:var(--mut);margin-bottom:5px;">Label</label>
+        <input type="text" name="label" value="{{ form.label or '' }}" placeholder="e.g. Nigeria" maxlength="60" required
+          style="width:100%;height:36px;padding:0 10px;border:1px solid var(--line2);border-radius:8px;font-size:13.5px;box-sizing:border-box;" />
+      </div>
+      <div>
+        <label style="display:block;font-size:12px;color:var(--mut);margin-bottom:5px;">Badge</label>
+        <input type="text" name="code" value="{{ form.code or '' }}" placeholder="NG" maxlength="4"
+          style="width:100%;height:36px;padding:0 10px;border:1px solid var(--line2);border-radius:8px;font-size:13.5px;box-sizing:border-box;text-transform:uppercase;" />
+      </div>
+    </div>
+    <label style="display:block;font-size:12px;color:var(--mut);margin-bottom:5px;">Blurb (shown under the name)</label>
+    <input type="text" name="blurb" value="{{ form.blurb or '' }}" placeholder="One line describing this room" maxlength="160"
+      style="width:100%;height:36px;padding:0 10px;border:1px solid var(--line2);border-radius:8px;font-size:13.5px;margin-bottom:14px;box-sizing:border-box;" />
+    <button type="submit" class="btn btn-green">Create community</button>
+  </form>
+</div>
+
+{% for r in rows %}
+<div class="report-card">
+  <div class="report-meta">
+    <b style="color:var(--ink);">#{{ r.key }}</b> · {{ r.label }} · badge "{{ r.code }}" · {{ counts.get(r.key, 0) }} post{{ '' if counts.get(r.key, 0) == 1 else 's' }}
+  </div>
+  {% if r.blurb %}<div class="report-post">{{ r.blurb }}</div>{% endif %}
+  {% if r.key != 'general' %}
+  <div class="row-actions">
+    <form class="inline" method="post" action="{{ url_for('admin.delete_community', key=r.key) }}"
+      onsubmit="return confirm('Permanently delete #{{ r.key }} and every post, vote and membership in it? This cannot be undone.');">
+      <button type="submit" class="btn btn-danger">Delete community</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% endfor %}
+{% endblock %}

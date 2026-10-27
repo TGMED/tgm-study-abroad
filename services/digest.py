@@ -7,15 +7,16 @@ this app has no built-in job scheduler), or trigger on demand from /admin.
 """
 import datetime
 
+from services.communities import list_communities
 from services.emailer import EmailSendError, send_digest_email
-from services.prompts import COMMUNITY_ROOMS, COMMUNITY_ROOM_META
 
 
 def _room_highlights(db, since_iso):
     """One entry per room that had top-level activity in the window, each
     naming that room's highest-scoring post as the highlight."""
     highlights = []
-    for room in COMMUNITY_ROOMS:
+    for community in list_communities(db):
+        room = community["key"]
         posts = db.execute(
             """
             SELECT p.id, p.content, p.author_label,
@@ -33,7 +34,7 @@ def _room_highlights(db, since_iso):
         top = posts[0]
         highlights.append({
             "room": room,
-            "room_label": COMMUNITY_ROOM_META.get(room, {}).get("label", room.title()),
+            "room_label": community["label"],
             "post_count": len(posts),
             "top_author": top["author_label"],
             "top_excerpt": (top["content"] or "")[:180],

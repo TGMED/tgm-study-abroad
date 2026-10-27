@@ -9,9 +9,15 @@ env/
 # Environment / secrets
 .env
 *.env
+data/.env
 app/data/.env
 
 # App-generated runtime files (never commit these)
+data/leads.db
+data/*.db
+data/.flask_secret_key
+data/.admin_password
+data/uploads/
 app/data/leads.db
 app/data/*.db
 app/data/.flask_secret_key

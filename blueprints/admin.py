@@ -1,13 +1,14 @@
 import datetime
 import os
+import re
 import secrets
 
 from flask import Blueprint, abort, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.security import generate_password_hash
 
 from extensions import check_admin_auth, get_db, requires_admin_auth
+from services.communities import community_meta, list_communities, room_exists
 from services.digest import send_weekly_digest
-from services.prompts import COMMUNITY_ROOM_META
 from services.whatsapp import WhatsAppSendError, send_text_message
 
 admin_bp = Blueprint("admin", __name__)
@@ -27,8 +28,8 @@ def _initials(name):
     return ("".join(w[0] for w in parts[:2]).upper()) or "M"
 
 
-def _room_label(room):
-    return COMMUNITY_ROOM_META.get(room, {}).get("label", (room or "").title())
+def _room_label(meta, room):
+    return meta.get(room, {}).get("label", (room or "").title())
 
 
 def _safe_next(raw):
@@ -207,11 +208,12 @@ def admin_member(sid):
         (sid,),
     ).fetchall()
     top = ch_rows[0]["c"] if ch_rows else 1
-    channels = [{"label": _room_label(c["room"]), "count": c["c"], "pct": int(c["c"] / top * 100)} for c in ch_rows]
+    meta = community_meta(db)
+    channels = [{"label": _room_label(meta, c["room"]), "count": c["c"], "pct": int(c["c"] / top * 100)} for c in ch_rows]
 
     act_rows = db.execute("SELECT * FROM community_posts WHERE student_id = ? ORDER BY id DESC LIMIT 40", (sid,)).fetchall()
     activity = [{
-        "id": a["id"], "is_comment": a["parent_id"] is not None, "room_label": _room_label(a["room"]),
+        "id": a["id"], "is_comment": a["parent_id"] is not None, "room_label": _room_label(meta, a["room"]),
         "ago": _ago(a["created_at"]), "content": a["content"], "is_hidden": bool(a["is_hidden"]),
     } for a in act_rows]
 
@@ -306,7 +308,7 @@ def admin_updates():
         "SELECT * FROM ai_post_queue WHERE status != 'pending' ORDER BY id DESC LIMIT 15"
     ).fetchall()
     return render_template(
-        "admin_updates.html", pending=pending, reviewed=reviewed, ago=_ago, rooms=COMMUNITY_ROOM_META,
+        "admin_updates.html", pending=pending, reviewed=reviewed, ago=_ago, rooms=list_communities(db),
     )
 
 
@@ -342,12 +344,12 @@ def approve_update(queue_id):
 @admin_bp.route("/admin/updates/compose", methods=["POST"])
 @requires_admin_auth
 def compose_update():
+    db = get_db()
     content = (request.form.get("content") or "").strip()
     room = request.form.get("room") or "general"
-    if not content or room not in COMMUNITY_ROOM_META:
+    if not content or not room_exists(db, room):
         return redirect(url_for("admin.admin_updates"))
 
-    db = get_db()
     now = _now()
     post_id = _post_update_to_community(db, room, content)
     # Logged into the same queue table, pre-approved, so it shows up in
@@ -561,6 +563,76 @@ def dismiss_reports(post_id):
     if request.is_json:
         return jsonify({"ok": True})
     return redirect(request.referrer or url_for("admin.admin_community"))
+
+
+# ---------------------------------------------------------------------------
+# Communities -- create/delete the rooms themselves (not their posts; see
+# Moderation above for that). #general can't be deleted: onboarding
+# auto-joins every member into it and several pages assume it always exists.
+# ---------------------------------------------------------------------------
+ROOM_KEY_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,31}$")
+
+
+@admin_bp.route("/admin/communities", methods=["GET", "POST"])
+@requires_admin_auth
+def admin_communities():
+    db = get_db()
+
+    if request.method == "POST":
+        key = (request.form.get("key") or "").strip().lower()
+        label = (request.form.get("label") or "").strip()[:60]
+        code = (request.form.get("code") or "").strip()[:4].upper() or key[:2].upper()
+        blurb = (request.form.get("blurb") or "").strip()[:160]
+
+        error = None
+        if not ROOM_KEY_RE.match(key):
+            error = "Key must be lowercase letters, numbers or hyphens (max 32 chars), starting with a letter or number."
+        elif room_exists(db, key):
+            error = f"\"{key}\" already exists."
+        elif not label:
+            error = "Label is required."
+
+        if error:
+            rows = db.execute("SELECT * FROM communities ORDER BY created_at, key").fetchall()
+            count_rows = db.execute(
+                "SELECT room, COUNT(*) AS c FROM community_posts WHERE is_hidden = 0 GROUP BY room"
+            ).fetchall()
+            counts = {r["room"]: r["c"] for r in count_rows}
+            return render_template("admin_communities.html", rows=rows, counts=counts, error=error,
+                                    form={"key": key, "label": label, "code": code, "blurb": blurb})
+
+        db.execute(
+            "INSERT INTO communities (key, label, code, blurb, created_at) VALUES (?, ?, ?, ?, ?)",
+            (key, label, code, blurb, _now()),
+        )
+        db.commit()
+        return redirect(url_for("admin.admin_communities"))
+
+    rows = db.execute("SELECT * FROM communities ORDER BY created_at, key").fetchall()
+    count_rows = db.execute(
+        "SELECT room, COUNT(*) AS c FROM community_posts WHERE is_hidden = 0 GROUP BY room"
+    ).fetchall()
+    counts = {r["room"]: r["c"] for r in count_rows}
+    return render_template("admin_communities.html", rows=rows, counts=counts, error=None, form={})
+
+
+@admin_bp.route("/admin/communities/<key>/delete", methods=["POST"])
+@requires_admin_auth
+def delete_community(key):
+    if key == "general":
+        return redirect(url_for("admin.admin_communities"))
+    db = get_db()
+    db.execute(
+        "DELETE FROM community_votes WHERE post_id IN (SELECT id FROM community_posts WHERE room = ?)", (key,)
+    )
+    db.execute(
+        "DELETE FROM community_reports WHERE post_id IN (SELECT id FROM community_posts WHERE room = ?)", (key,)
+    )
+    db.execute("DELETE FROM community_posts WHERE room = ?", (key,))
+    db.execute("DELETE FROM room_members WHERE room = ?", (key,))
+    db.execute("DELETE FROM communities WHERE key = ?", (key,))
+    db.commit()
+    return redirect(url_for("admin.admin_communities"))
 
 
 # ---------------------------------------------------------------------------

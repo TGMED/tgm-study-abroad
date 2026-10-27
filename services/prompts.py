@@ -13,20 +13,6 @@ actual conversation.
 
 from services.knowledge_supplement import get_knowledge_supplement_block
 
-COMMUNITY_ROOMS = ("general", "uk", "canada", "ireland", "usa", "poland", "germany", "australia")
-
-# Display metadata for each community room (label + country-code badge).
-COMMUNITY_ROOM_META = {
-    "general": {"label": "General", "code": "★", "blurb": "Say hello & meet the whole Community, whatever your destination"},
-    "uk": {"label": "United Kingdom", "code": "GB", "blurb": "Students & pros across the UK"},
-    "canada": {"label": "Canada", "code": "CA", "blurb": "PGWP, PR routes & campus life"},
-    "ireland": {"label": "Ireland", "code": "IE", "blurb": "EU tech hub & English-taught study"},
-    "usa": {"label": "United States", "code": "US", "blurb": "F-1, OPT & the American route"},
-    "poland": {"label": "Poland", "code": "PL", "blurb": "Affordable tuition & the Schengen route"},
-    "germany": {"label": "Germany", "code": "DE", "blurb": "Tuition-free public unis & blocked-account visas"},
-    "australia": {"label": "Australia", "code": "AU", "blurb": "Post-study work visas & world-class unis"},
-}
-
 # Emitted by Amara at the end of a reply where she's deferring to a human
 # counsellor (see the persona instruction below) -- detected server-side
 # to flag the conversation for a human, then stripped before the student
@@ -134,8 +120,7 @@ def build_study_update_prompt(recent_posts=None):
     return "\n\n".join(p for p in parts if p)
 
 
-def build_community_system_prompt(room):
-    room_label = COMMUNITY_ROOM_META.get(room, {}).get("label", room)
+def build_community_system_prompt(room_label):
     parts = [
         AMARA_PERSONA,
         get_knowledge_supplement_block(),
