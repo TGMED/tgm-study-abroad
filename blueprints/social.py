@@ -251,7 +251,7 @@ def dashboard():
     convo_count = db.execute(
         """SELECT COUNT(DISTINCT other_id) AS c FROM (
              SELECT CASE WHEN sender_id = ? THEN recipient_id ELSE sender_id END AS other_id
-             FROM direct_messages WHERE sender_id = ? OR recipient_id = ?)""",
+             FROM direct_messages WHERE sender_id = ? OR recipient_id = ?) dm""",
         (sid, sid, sid),
     ).fetchone()["c"]
     people_count = db.execute(
