@@ -128,13 +128,30 @@ _NAMED_PARAM_RE = re.compile(r":(\w+)\b")
 # SQLite's upsert-on-conflict shorthand, used verbatim in a couple of
 # blueprints (see social.py) -- MySQL's equivalent statement-level modifier.
 _INSERT_OR_IGNORE_RE = re.compile(r"(?i)^(\s*)INSERT OR IGNORE\b")
+# Matches a whole single-quoted string literal (with '' as an escaped quote
+# inside one), so placeholder substitution can skip over literal content --
+# e.g. "LIKE '%?%'" has a literal ? that must survive untouched, not become
+# a second (unbound) %s alongside the query's real placeholders.
+_STRING_LITERAL_RE = re.compile(r"'(?:[^']|'')*'")
+
+
+def _translate_placeholders(segment, params):
+    if isinstance(params, dict):
+        return _NAMED_PARAM_RE.sub(r"%(\1)s", segment)
+    return segment.replace("?", "%s")
 
 
 def _translate_sql(sql, params):
-    translated = _INSERT_OR_IGNORE_RE.sub(r"\1INSERT IGNORE", sql)
-    if isinstance(params, dict):
-        return _NAMED_PARAM_RE.sub(r"%(\1)s", translated)
-    return translated.replace("?", "%s")
+    sql = _INSERT_OR_IGNORE_RE.sub(r"\1INSERT IGNORE", sql)
+
+    parts = []
+    pos = 0
+    for m in _STRING_LITERAL_RE.finditer(sql):
+        parts.append(_translate_placeholders(sql[pos:m.start()], params))
+        parts.append(m.group(0))  # leave the literal's contents untouched
+        pos = m.end()
+    parts.append(_translate_placeholders(sql[pos:], params))
+    return "".join(parts)
 
 
 def _parse_mysql_url(url):
