@@ -4,6 +4,7 @@ import re
 import secrets
 import sqlite3
 from functools import wraps
+from urllib.parse import urlparse
 
 from flask import g, redirect, request, session, url_for
 
@@ -11,9 +12,9 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
 DB_PATH = os.path.join(DATA_DIR, "leads.db")
 
-# If DATABASE_URL is set (Railway/Render/etc Postgres addon), use Postgres via
-# the compatibility layer below; otherwise fall back to the local SQLite file
-# so the app still runs with zero setup in dev.
+# If DATABASE_URL is set (mysql://user:password@host:port/dbname), use MySQL
+# via the compatibility layer below; otherwise fall back to the local SQLite
+# file so the app still runs with zero setup in dev.
 DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
 
 # ---------------------------------------------------------------------------
@@ -115,24 +116,42 @@ def get_or_create_secret_key():
 
 
 # ---------------------------------------------------------------------------
-# Postgres compatibility layer -- lets every blueprint keep using its
+# MySQL compatibility layer -- lets every blueprint keep using its
 # sqlite3-style calls (`?`/`:name` placeholders, `db.execute(...).fetchall()`,
 # `row["col"]`, `cur.lastrowid`) unchanged regardless of which backend is
-# active, so DATABASE_URL is the only thing that switches behavior.
+# active, so DATABASE_URL is the only thing that switches behavior. PyMySQL
+# (like sqlite3) sets cursor.lastrowid natively after an AUTO_INCREMENT
+# INSERT, so unlike a Postgres version of this layer, nothing special is
+# needed to fake that up -- it just falls out of PyMySQL's own cursor.
 # ---------------------------------------------------------------------------
 _NAMED_PARAM_RE = re.compile(r":(\w+)\b")
+# SQLite's upsert-on-conflict shorthand, used verbatim in a couple of
+# blueprints (see social.py) -- MySQL's equivalent statement-level modifier.
+_INSERT_OR_IGNORE_RE = re.compile(r"(?i)^(\s*)INSERT OR IGNORE\b")
 
 
-def _pg_translate(sql, params):
+def _translate_sql(sql, params):
+    translated = _INSERT_OR_IGNORE_RE.sub(r"\1INSERT IGNORE", sql)
     if isinstance(params, dict):
-        return _NAMED_PARAM_RE.sub(r"%(\1)s", sql)
-    return sql.replace("?", "%s")
+        return _NAMED_PARAM_RE.sub(r"%(\1)s", translated)
+    return translated.replace("?", "%s")
 
 
-class _PGCursor:
+def _parse_mysql_url(url):
+    """mysql://user:password@host:port/dbname -> pymysql.connect() kwargs."""
+    parsed = urlparse(url)
+    return {
+        "host": parsed.hostname or "localhost",
+        "port": parsed.port or 3306,
+        "user": parsed.username,
+        "password": parsed.password or "",
+        "database": (parsed.path or "").lstrip("/"),
+    }
+
+
+class _MySQLCursor:
     def __init__(self, cur):
         self._cur = cur
-        self.lastrowid = None
 
     def fetchone(self):
         return self._cur.fetchone()
@@ -140,35 +159,19 @@ class _PGCursor:
     def fetchall(self):
         return self._cur.fetchall()
 
+    @property
+    def lastrowid(self):
+        return self._cur.lastrowid
 
-class _PGConnection:
+
+class _MySQLConnection:
     def __init__(self, conn):
         self._conn = conn
 
     def execute(self, sql, params=None):
-        from psycopg2.extras import RealDictCursor
-
-        translated = _pg_translate(sql, params)
-        # Every table this app pulls .lastrowid from has an `id` primary key;
-        # student_profiles is the one INSERT that doesn't (its PK is
-        # student_id) and it's always the ON CONFLICT upsert, so that's used
-        # as the signal to skip an otherwise-invalid "RETURNING id". The
-        # community_votes table is a composite-PK (post_id, student_id)
-        # upsert too, same reasoning.
-        wants_id = (
-            translated.lstrip().upper().startswith("INSERT")
-            and "RETURNING" not in translated.upper()
-            and "ON CONFLICT" not in translated.upper()
-        )
-        if wants_id:
-            translated += " RETURNING id"
-
-        cur = self._conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute(translated, params)
-        wrapped = _PGCursor(cur)
-        if wants_id:
-            wrapped.lastrowid = cur.fetchone()["id"]
-        return wrapped
+        cur = self._conn.cursor()
+        cur.execute(_translate_sql(sql, params), params)
+        return _MySQLCursor(cur)
 
     def commit(self):
         self._conn.commit()
@@ -178,14 +181,17 @@ class _PGConnection:
 
 
 # ---------------------------------------------------------------------------
-# DB connection (per-request, via Flask's `g`) -- SQLite or Postgres
+# DB connection (per-request, via Flask's `g`) -- SQLite or MySQL
 # ---------------------------------------------------------------------------
 def get_db():
     if "db" not in g:
         if DATABASE_URL:
-            import psycopg2
+            import pymysql
+            import pymysql.cursors
 
-            g.db = _PGConnection(psycopg2.connect(DATABASE_URL))
+            g.db = _MySQLConnection(pymysql.connect(
+                cursorclass=pymysql.cursors.DictCursor, **_parse_mysql_url(DATABASE_URL)
+            ))
         else:
             os.makedirs(DATA_DIR, exist_ok=True)
             g.db = sqlite3.connect(DB_PATH)
@@ -203,7 +209,7 @@ def close_db(app):
 
 def init_db():
     if DATABASE_URL:
-        _init_db_postgres()
+        _init_db_mysql()
     else:
         _init_db_sqlite()
 
@@ -224,15 +230,25 @@ _DEFAULT_COMMUNITIES = [
 ]
 
 
-def _init_db_postgres():
-    import psycopg2
-
-    conn = psycopg2.connect(DATABASE_URL)
-    cur = conn.cursor()
+def _mysql_table_columns(cur, table):
     cur.execute(
+        "SELECT column_name FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = %s",
+        (table,),
+    )
+    return {row[0] for row in cur.fetchall()}
+
+
+def _init_db_mysql():
+    import pymysql
+
+    conn = pymysql.connect(**_parse_mysql_url(DATABASE_URL))
+    cur = conn.cursor()
+    # One statement per execute() -- unlike sqlite3's executescript()/psycopg2,
+    # PyMySQL's cursor.execute() doesn't run a semicolon-separated batch.
+    for statement in (
         """
         CREATE TABLE IF NOT EXISTS leads (
-            id SERIAL PRIMARY KEY,
+            id INT AUTO_INCREMENT PRIMARY KEY,
             created_at TEXT NOT NULL,
             email TEXT NOT NULL,
             qualification TEXT,
@@ -246,12 +262,19 @@ def _init_db_postgres():
             source TEXT,
             forwarded_to_google_form INTEGER NOT NULL DEFAULT 0,
             forwarded_to_hubspot INTEGER NOT NULL DEFAULT 0
-        );
-
+        )
+        """,
+        # email/phone are VARCHAR (not TEXT) because they're UNIQUE -- MySQL
+        # requires a bounded length on any indexed/unique/key column, unlike
+        # SQLite/Postgres which index TEXT columns directly. chat_mode is
+        # VARCHAR for a different reason: MySQL only allows a DEFAULT on
+        # TEXT/BLOB columns from 8.0.13 onward, so a short enum-like string
+        # with a default is kept VARCHAR everywhere to not depend on that.
+        """
         CREATE TABLE IF NOT EXISTS students (
-            id SERIAL PRIMARY KEY,
-            email TEXT NOT NULL UNIQUE,
-            phone TEXT UNIQUE,
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            email VARCHAR(255) NOT NULL UNIQUE,
+            phone VARCHAR(32) UNIQUE,
             password_hash TEXT,
             display_name TEXT,
             created_at TEXT NOT NULL,
@@ -266,9 +289,10 @@ def _init_db_postgres():
             study_history TEXT,
             work_history TEXT,
             onboarded INTEGER NOT NULL DEFAULT 0,
-            chat_mode TEXT NOT NULL DEFAULT 'ai'
-        );
-
+            chat_mode VARCHAR(16) NOT NULL DEFAULT 'ai'
+        )
+        """,
+        """
         CREATE TABLE IF NOT EXISTS student_profiles (
             student_id INTEGER PRIMARY KEY REFERENCES students(id),
             lead_id INTEGER REFERENCES leads(id),
@@ -281,37 +305,45 @@ def _init_db_postgres():
             score INTEGER,
             ratio REAL,
             updated_at TEXT NOT NULL
-        );
-
+        )
+        """,
+        """
         CREATE TABLE IF NOT EXISTS otp_codes (
-            id SERIAL PRIMARY KEY,
+            id INT AUTO_INCREMENT PRIMARY KEY,
             email TEXT NOT NULL,
             code_hash TEXT NOT NULL,
-            purpose TEXT NOT NULL DEFAULT 'login',
+            purpose VARCHAR(16) NOT NULL DEFAULT 'login',
             expires_at TEXT NOT NULL,
             consumed_at TEXT,
             created_at TEXT NOT NULL,
             attempts INTEGER NOT NULL DEFAULT 0
-        );
-
+        )
+        """,
+        """
         CREATE TABLE IF NOT EXISTS chat_messages (
-            id SERIAL PRIMARY KEY,
+            id INT AUTO_INCREMENT PRIMARY KEY,
             student_id INTEGER NOT NULL REFERENCES students(id),
             role TEXT NOT NULL,
             content TEXT NOT NULL,
             created_at TEXT NOT NULL
-        );
-
+        )
+        """,
+        # `key` is VARCHAR (not TEXT) because it's the PRIMARY KEY, and
+        # backtick-quoted because KEY is a reserved word in MySQL -- every
+        # query touching this column backtick-quotes it the same way (see
+        # services/communities.py), which SQLite also accepts unchanged.
+        """
         CREATE TABLE IF NOT EXISTS communities (
-            key TEXT PRIMARY KEY,
+            `key` VARCHAR(32) PRIMARY KEY,
             label TEXT NOT NULL,
             code TEXT NOT NULL,
             blurb TEXT,
             created_at TEXT NOT NULL
-        );
-
+        )
+        """,
+        """
         CREATE TABLE IF NOT EXISTS community_posts (
-            id SERIAL PRIMARY KEY,
+            id INT AUTO_INCREMENT PRIMARY KEY,
             room TEXT NOT NULL,
             student_id INTEGER REFERENCES students(id),
             author_label TEXT NOT NULL,
@@ -321,119 +353,145 @@ def _init_db_postgres():
             created_at TEXT NOT NULL,
             is_hidden INTEGER NOT NULL DEFAULT 0,
             image_path TEXT
-        );
-
+        )
+        """,
+        """
         CREATE TABLE IF NOT EXISTS community_votes (
             post_id INTEGER NOT NULL REFERENCES community_posts(id),
             student_id INTEGER NOT NULL REFERENCES students(id),
             value INTEGER NOT NULL,
             created_at TEXT NOT NULL,
             PRIMARY KEY (post_id, student_id)
-        );
-
+        )
+        """,
+        # room is VARCHAR here (unlike community_posts.room) because it's
+        # part of this table's composite PRIMARY KEY.
+        """
         CREATE TABLE IF NOT EXISTS room_members (
             student_id INTEGER NOT NULL REFERENCES students(id),
-            room TEXT NOT NULL,
+            room VARCHAR(32) NOT NULL,
             joined_at TEXT NOT NULL,
             PRIMARY KEY (student_id, room)
-        );
-
+        )
+        """,
+        """
         CREATE TABLE IF NOT EXISTS direct_messages (
-            id SERIAL PRIMARY KEY,
+            id INT AUTO_INCREMENT PRIMARY KEY,
             sender_id INTEGER NOT NULL REFERENCES students(id),
             recipient_id INTEGER NOT NULL REFERENCES students(id),
             content TEXT NOT NULL,
             created_at TEXT NOT NULL,
             read_at TEXT,
             shared_post_id INTEGER REFERENCES community_posts(id)
-        );
-
+        )
+        """,
+        """
         CREATE TABLE IF NOT EXISTS community_reports (
-            id SERIAL PRIMARY KEY,
+            id INT AUTO_INCREMENT PRIMARY KEY,
             post_id INTEGER NOT NULL REFERENCES community_posts(id),
             reported_by INTEGER REFERENCES students(id),
             reason TEXT,
             created_at TEXT NOT NULL,
             resolved_at TEXT,
             resolved_action TEXT
-        );
-
+        )
+        """,
+        """
         CREATE TABLE IF NOT EXISTS ai_post_queue (
-            id SERIAL PRIMARY KEY,
-            room TEXT NOT NULL DEFAULT 'general',
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            room VARCHAR(32) NOT NULL DEFAULT 'general',
             content TEXT NOT NULL,
-            status TEXT NOT NULL DEFAULT 'pending',
+            status VARCHAR(16) NOT NULL DEFAULT 'pending',
             created_at TEXT NOT NULL,
             reviewed_at TEXT,
             posted_at TEXT,
             community_post_id INTEGER REFERENCES community_posts(id)
-        );
-
+        )
+        """,
+        """
         CREATE TABLE IF NOT EXISTS human_handoff_queue (
-            id SERIAL PRIMARY KEY,
+            id INT AUTO_INCREMENT PRIMARY KEY,
             student_id INTEGER NOT NULL REFERENCES students(id),
             reason TEXT NOT NULL,
-            status TEXT NOT NULL DEFAULT 'open',
+            status VARCHAR(16) NOT NULL DEFAULT 'open',
             created_at TEXT NOT NULL,
             resolved_at TEXT,
             resolved_by TEXT
-        );
-
+        )
+        """,
+        """
         CREATE TABLE IF NOT EXISTS whatsapp_events (
-            wamid TEXT PRIMARY KEY,
+            wamid VARCHAR(128) PRIMARY KEY,
             created_at TEXT NOT NULL
-        );
-
+        )
+        """,
+        """
         CREATE TABLE IF NOT EXISTS counselors (
-            id SERIAL PRIMARY KEY,
+            id INT AUTO_INCREMENT PRIMARY KEY,
             full_name TEXT NOT NULL,
-            email TEXT NOT NULL UNIQUE,
+            email VARCHAR(255) NOT NULL UNIQUE,
             password_hash TEXT NOT NULL,
             headline TEXT,
             avatar_path TEXT,
             is_active INTEGER NOT NULL DEFAULT 1,
             created_at TEXT NOT NULL
-        );
-
+        )
+        """,
+        """
         CREATE TABLE IF NOT EXISTS counselor_conversations (
-            id SERIAL PRIMARY KEY,
+            id INT AUTO_INCREMENT PRIMARY KEY,
             student_id INTEGER NOT NULL REFERENCES students(id),
             counselor_id INTEGER NOT NULL REFERENCES counselors(id),
             created_at TEXT NOT NULL,
             last_message_at TEXT NOT NULL,
             UNIQUE(student_id, counselor_id)
-        );
-
+        )
+        """,
+        """
         CREATE TABLE IF NOT EXISTS counselor_messages (
-            id SERIAL PRIMARY KEY,
+            id INT AUTO_INCREMENT PRIMARY KEY,
             conversation_id INTEGER NOT NULL REFERENCES counselor_conversations(id),
             sender_type TEXT NOT NULL,
             content TEXT NOT NULL,
             created_at TEXT NOT NULL
-        );
-        """
-    )
-    # password_hash was added after some deployments already had a students
-    # table -- CREATE TABLE IF NOT EXISTS above is a no-op against those, so
-    # add the column explicitly for anything created before this.
-    cur.execute("ALTER TABLE students ADD COLUMN IF NOT EXISTS password_hash TEXT")
-    cur.execute("ALTER TABLE community_posts ADD COLUMN IF NOT EXISTS image_path TEXT")
+        )
+        """,
+    ):
+        cur.execute(statement)
+
+    # password_hash/image_path were added after some deployments already had
+    # these tables -- CREATE TABLE IF NOT EXISTS above is a no-op against
+    # those, so add the columns explicitly for anything created before this.
+    # Checked via information_schema rather than `ADD COLUMN IF NOT EXISTS`
+    # since that clause only exists from MySQL 8.0.29 -- this works on any
+    # MySQL/MariaDB version, same defensive approach _init_db_sqlite already
+    # takes with PRAGMA table_info.
+    student_columns = _mysql_table_columns(cur, "students")
+    if "password_hash" not in student_columns:
+        cur.execute("ALTER TABLE students ADD COLUMN password_hash TEXT")
+    post_columns = _mysql_table_columns(cur, "community_posts")
+    if "image_path" not in post_columns:
+        cur.execute("ALTER TABLE community_posts ADD COLUMN image_path TEXT")
+
     cur.execute("SELECT COUNT(*) FROM communities")
     if cur.fetchone()[0] == 0:
         now_iso = datetime.datetime.utcnow().isoformat()
         for key, label, code, blurb in _DEFAULT_COMMUNITIES:
             cur.execute(
-                "INSERT INTO communities (key, label, code, blurb, created_at) VALUES (%s, %s, %s, %s, %s)",
+                "INSERT INTO communities (`key`, label, code, blurb, created_at) VALUES (%s, %s, %s, %s, %s)",
                 (key, label, code, blurb, now_iso),
             )
+
     # #general was introduced after some students had already onboarded --
     # backfill them in, since every member is expected to land there.
+    # INSERT IGNORE is MySQL's equivalent of SQLite's INSERT OR IGNORE; the
+    # timestamp is computed in Python (matching every other created_at in
+    # this app) rather than relying on MySQL's NOW(), which returns a
+    # DATETIME, not the ISO-8601 string format the rest of the app uses.
+    now_iso = datetime.datetime.utcnow().isoformat()
     cur.execute(
-        """
-        INSERT INTO room_members (student_id, room, joined_at)
-        SELECT id, 'general', NOW()::TEXT FROM students WHERE onboarded = 1
-        ON CONFLICT (student_id, room) DO NOTHING
-        """
+        "INSERT IGNORE INTO room_members (student_id, room, joined_at) SELECT id, 'general', %s FROM students WHERE onboarded = 1",
+        (now_iso,),
     )
     conn.commit()
     cur.close()
@@ -505,7 +563,7 @@ def _init_db_sqlite():
         );
 
         CREATE TABLE IF NOT EXISTS communities (
-            key TEXT PRIMARY KEY,
+            `key` TEXT PRIMARY KEY,
             label TEXT NOT NULL,
             code TEXT NOT NULL,
             blurb TEXT,
@@ -656,7 +714,7 @@ def _init_db_sqlite():
     if conn.execute("SELECT COUNT(*) FROM communities").fetchone()[0] == 0:
         now_iso = datetime.datetime.utcnow().isoformat()
         conn.executemany(
-            "INSERT INTO communities (key, label, code, blurb, created_at) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO communities (`key`, label, code, blurb, created_at) VALUES (?, ?, ?, ?, ?)",
             [(key, label, code, blurb, now_iso) for key, label, code, blurb in _DEFAULT_COMMUNITIES],
         )
 

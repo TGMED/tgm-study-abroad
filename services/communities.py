@@ -9,7 +9,10 @@ digest, Amara's community prompt, post validation) sees the same list.
 
 def list_communities(db):
     """Ordered list of {key, label, code, blurb} dicts."""
-    rows = db.execute("SELECT key, label, code, blurb FROM communities ORDER BY created_at, key").fetchall()
+    # `key` is backtick-quoted because it's a reserved word in MySQL --
+    # SQLite accepts backticks too (a deliberate compatibility shim), so
+    # this works unchanged on either backend.
+    rows = db.execute("SELECT `key`, label, code, blurb FROM communities ORDER BY created_at, `key`").fetchall()
     return [{"key": r["key"], "label": r["label"], "code": r["code"], "blurb": r["blurb"] or ""} for r in rows]
 
 
@@ -24,9 +27,9 @@ def community_meta(db):
 
 
 def room_exists(db, key):
-    return db.execute("SELECT 1 FROM communities WHERE key = ?", (key,)).fetchone() is not None
+    return db.execute("SELECT 1 FROM communities WHERE `key` = ?", (key,)).fetchone() is not None
 
 
 def room_label(db, key):
-    row = db.execute("SELECT label FROM communities WHERE key = ?", (key,)).fetchone()
+    row = db.execute("SELECT label FROM communities WHERE `key` = ?", (key,)).fetchone()
     return row["label"] if row else (key or "").title()

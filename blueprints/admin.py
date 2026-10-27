@@ -593,7 +593,7 @@ def admin_communities():
             error = "Label is required."
 
         if error:
-            rows = db.execute("SELECT * FROM communities ORDER BY created_at, key").fetchall()
+            rows = db.execute("SELECT * FROM communities ORDER BY created_at, `key`").fetchall()
             count_rows = db.execute(
                 "SELECT room, COUNT(*) AS c FROM community_posts WHERE is_hidden = 0 GROUP BY room"
             ).fetchall()
@@ -602,13 +602,13 @@ def admin_communities():
                                     form={"key": key, "label": label, "code": code, "blurb": blurb})
 
         db.execute(
-            "INSERT INTO communities (key, label, code, blurb, created_at) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO communities (`key`, label, code, blurb, created_at) VALUES (?, ?, ?, ?, ?)",
             (key, label, code, blurb, _now()),
         )
         db.commit()
         return redirect(url_for("admin.admin_communities"))
 
-    rows = db.execute("SELECT * FROM communities ORDER BY created_at, key").fetchall()
+    rows = db.execute("SELECT * FROM communities ORDER BY created_at, `key`").fetchall()
     count_rows = db.execute(
         "SELECT room, COUNT(*) AS c FROM community_posts WHERE is_hidden = 0 GROUP BY room"
     ).fetchall()
@@ -630,7 +630,7 @@ def delete_community(key):
     )
     db.execute("DELETE FROM community_posts WHERE room = ?", (key,))
     db.execute("DELETE FROM room_members WHERE room = ?", (key,))
-    db.execute("DELETE FROM communities WHERE key = ?", (key,))
+    db.execute("DELETE FROM communities WHERE `key` = ?", (key,))
     db.commit()
     return redirect(url_for("admin.admin_communities"))
 

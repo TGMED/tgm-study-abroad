@@ -23,7 +23,7 @@ A community platform for TGM Education's study-abroad students and prospects. Me
 - Jinja templates, HTML, CSS and JavaScript on the front end
 - `requests` for calling external APIs (Gemini, WhatsApp)
 - `python-dotenv` for loading settings from `.env`
-- `psycopg2-binary` for PostgreSQL, plus a local SQLite database for leads (TODO: say which database is used where)
+- `PyMySQL` for MySQL (used when `DATABASE_URL` is set), otherwise a local SQLite file -- same schema either way
 
 ## Project structure
 
@@ -69,7 +69,7 @@ A community platform for TGM Education's study-abroad students and prospects. Me
 ### Requirements
 
 - Python 3.12
-- TODO: PostgreSQL version, if used
+- MySQL 5.7+ (or MariaDB), only if you set `DATABASE_URL` -- otherwise not needed
 
 ### Install
 
