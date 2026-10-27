@@ -144,6 +144,15 @@ def _translate_placeholders(segment, params):
 def _translate_sql(sql, params):
     sql = _INSERT_OR_IGNORE_RE.sub(r"\1INSERT IGNORE", sql)
 
+    # PyMySQL's cursor.execute() does client-side `query % args` formatting
+    # (pyformat paramstyle) -- unlike sqlite3, where % is never special. Any
+    # literal % already in the query text (e.g. a LIKE '%...%' wildcard)
+    # must be escaped to %% first, or Python's % operator reads it as the
+    # start of a format specifier and throws "unsupported format character".
+    # Must run before the placeholder substitution below, which inserts
+    # fresh, singular %s/%(name)s tokens that must NOT be escaped in turn.
+    sql = sql.replace("%", "%%")
+
     parts = []
     pos = 0
     for m in _STRING_LITERAL_RE.finditer(sql):
