@@ -1,6 +1,6 @@
 (function () {
   var $ = function (id) { return document.getElementById(id); };
-  var next = window.__TGM_RESET_NEXT__ || '/chat';
+  var next = window.__TGM_RESET_NEXT__ || '/dashboard';
 
   function showError(msg) {
     var el = $('resetError');

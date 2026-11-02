@@ -81,7 +81,7 @@ def join():
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
-    next_url = _safe_next(request.values.get("next")) or "/chat"
+    next_url = _safe_next(request.values.get("next")) or url_for("social.dashboard")
 
     if session.get("student_id"):
         return redirect(next_url)
@@ -121,7 +121,7 @@ def login():
 
 @auth_bp.route("/forgot-password")
 def forgot_password():
-    next_url = _safe_next(request.args.get("next")) or "/chat"
+    next_url = _safe_next(request.args.get("next")) or url_for("social.dashboard")
     email = (request.args.get("email") or "").strip()
     return render_template("forgot_password.html", email=email, next_url=next_url)
 
@@ -165,7 +165,7 @@ def reset_password():
     email = (payload.get("email") or "").strip().lower()
     code = (payload.get("code") or "").strip()
     new_password = payload.get("new_password") or ""
-    next_url = _safe_next(payload.get("next")) or "/chat"
+    next_url = _safe_next(payload.get("next")) or url_for("social.dashboard")
 
     if not email or not code:
         return jsonify({"ok": False, "error": "Email and code are required."}), 400
