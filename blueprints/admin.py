@@ -200,7 +200,7 @@ def admin_member(sid):
     posts = db.execute("SELECT COUNT(*) AS c FROM community_posts WHERE student_id = ? AND parent_id IS NULL AND is_hidden = 0", (sid,)).fetchone()["c"]
     comments = db.execute("SELECT COUNT(*) AS c FROM community_posts WHERE student_id = ? AND parent_id IS NOT NULL AND is_hidden = 0", (sid,)).fetchone()["c"]
     votes = db.execute("SELECT COALESCE(SUM(v.value), 0) AS s FROM community_votes v JOIN community_posts p ON p.id = v.post_id WHERE p.student_id = ?", (sid,)).fetchone()["s"]
-    amara = db.execute("SELECT COUNT(*) AS c FROM community_posts WHERE student_id = ? AND content LIKE '%@amara%'", (sid,)).fetchone()["c"]
+    amara = db.execute("SELECT COUNT(*) AS c FROM community_posts WHERE student_id = ? AND content LIKE '%@tgmai%'", (sid,)).fetchone()["c"]
     reports = db.execute("SELECT COUNT(*) AS c FROM community_reports r JOIN community_posts p ON p.id = r.post_id WHERE p.student_id = ?", (sid,)).fetchone()["c"]
 
     ch_rows = db.execute(
@@ -510,7 +510,7 @@ def admin_inbox_handback(sid):
     )
     db.execute(
         "INSERT INTO chat_messages (student_id, role, content, created_at) VALUES (?, 'system', ?, ?)",
-        (sid, "↩️ Back with Amara — feel free to keep asking questions.", _now()),
+        (sid, "↩️ Back with TGM AI — feel free to keep asking questions.", _now()),
     )
     db.commit()
     return jsonify({"ok": True})

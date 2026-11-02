@@ -68,7 +68,7 @@
     appendMessage('user', message);
     // A human who's already taken this conversation over is who'll answer --
     // showing "Amara is typing" would be a lie in that mode, so skip it.
-    var thinkingBubble = currentMode === 'ai' ? appendMessage('model', 'Amara is typing…') : null;
+    var thinkingBubble = currentMode === 'ai' ? appendMessage('model', 'TGM AI is typing…') : null;
     if (thinkingBubble) thinkingBubble.classList.add('chat-thinking');
 
     fetch('/api/chat', {
@@ -100,7 +100,7 @@
   }
 
   function fetchOpening() {
-    var thinkingBubble = appendMessage('model', "Amara is putting together your personalised welcome…");
+    var thinkingBubble = appendMessage('model', "TGM AI is putting together your personalised welcome…");
     thinkingBubble.classList.add('chat-thinking');
     input.disabled = true;
     sendBtn.disabled = true;

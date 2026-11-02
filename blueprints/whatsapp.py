@@ -193,7 +193,7 @@ def _handle_message(db, student_id, wa_id, text):
     try:
         send_text_message(
             wa_id,
-            "Hi, I'm Amara from TGM Education 👋 I've got your message and I'm ready to help — "
+            "Hi, I'm TGM AI 👋 I've got your message and I'm ready to help — "
             f"let's continue here: {link}",
         )
     except WhatsAppSendError as exc:

@@ -14,7 +14,9 @@ from services.prompts import build_community_system_prompt
 
 community_bp = Blueprint("community", __name__)
 
-MENTION_RE = re.compile(r"(?<!\w)@(amara|ai)\b", re.IGNORECASE)
+# "tgmai" is the current name; "amara"/"ai" kept so posts written before the
+# TGM AI rename (and anyone who types the old habit) still trigger a reply.
+MENTION_RE = re.compile(r"(?<!\w)@(tgmai|amara|ai)\b", re.IGNORECASE)
 MAX_POST_IMAGE_BYTES = 8 * 1024 * 1024
 
 
@@ -328,13 +330,13 @@ def _generate_ai_reply(db, room, thread_root_id):
     try:
         reply_text = call_gemini(system_prompt, history)
     except GeminiError as exc:
-        reply_text = f"(Amara couldn't respond just now: {exc})"
+        reply_text = f"(TGM AI couldn't respond just now: {exc})"
 
     now = datetime.datetime.utcnow().isoformat()
     cur = db.execute(
         """
         INSERT INTO community_posts (room, student_id, author_label, is_ai, parent_id, content, created_at)
-        VALUES (?, NULL, 'Amara', 1, ?, ?, ?)
+        VALUES (?, NULL, 'TGM AI', 1, ?, ?, ?)
         """,
         (room, thread_root_id, reply_text, now),
     )

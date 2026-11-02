@@ -33,7 +33,7 @@
     btn.className = 'btn btn-green';
     if (mode === 'human') {
       btn.id = 'handbackBtn';
-      btn.textContent = '↩️ Hand back to Amara';
+      btn.textContent = '↩️ Hand back to TGM AI';
       btn.addEventListener('click', handback);
       replyBox.style.display = '';
     } else {

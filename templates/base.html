@@ -16,7 +16,7 @@
     <a href="{{ url_for('home') }}" {% if request.endpoint == 'home' %}class="active"{% endif %}>Home</a>
     {% if session.get('student_id') %}
     <a href="{{ url_for('social.communities') }}">Community</a>
-    <a href="{{ url_for('chat.chat_page') }}" {% if request.endpoint == 'chat.chat_page' %}class="active"{% endif %}>Amara AI</a>
+    <a href="{{ url_for('chat.chat_page') }}" {% if request.endpoint == 'chat.chat_page' %}class="active"{% endif %}>TGM AI</a>
     <a href="{{ url_for('auth.logout') }}" class="tgm-nav-logout">Log out</a>
     {% else %}
     <a href="{{ url_for('auth.login') }}" {% if request.endpoint == 'auth.login' %}class="active"{% endif %}>Log in</a>

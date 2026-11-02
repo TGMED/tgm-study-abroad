@@ -1,7 +1,7 @@
 
 # TGM Community
 
-A community platform for TGM Education's study-abroad students and prospects. Members join communities, post and chat, track their profile progress, use planning tools, and get guidance from the Amara AI assistant and TGM counsellors.
+A community platform for TGM Education's study-abroad students and prospects. Members join communities, post and chat, track their profile progress, use planning tools, and get guidance from the TGM AI assistant and TGM counsellors.
 
 ## Features
 
@@ -10,7 +10,7 @@ A community platform for TGM Education's study-abroad students and prospects. Me
 - **Chat and social features:** member-to-member interaction
 - **Dashboard:** activity feed, community stats and a profile completion checklist
 - **Leaderboard** and **ROI Calculator** (what studying abroad is worth after rent, tax and living costs)
-- **Amara AI:** study-abroad assistant powered by Google Gemini, with a custom knowledge base and prompts
+- **TGM AI:** study-abroad assistant powered by Google Gemini, with a custom knowledge base and prompts
 - **Counsellors:** counsellor directory, separate counsellor login and a counsellor portal
 - **Admin area:** platform administration
 - **WhatsApp integration:** TODO (describe what it does, for example notifications or lead capture)
@@ -45,7 +45,7 @@ A community platform for TGM Education's study-abroad students and prospects. Me
 │   │   ├── social.py
 │   │   └── whatsapp.py
 │   ├── services/                      # business logic and integrations
-│   │   ├── amara.py                   # Amara AI assistant
+│   │   ├── amara.py                   # TGM AI assistant
 │   │   ├── digest.py                  # weekly digest builder
 │   │   ├── emailer.py                 # sending email
 │   │   ├── gemini.py                  # Gemini API client
